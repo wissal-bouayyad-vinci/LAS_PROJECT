@@ -50,7 +50,6 @@ int scoreCalculation(int* grille);
  * PRE: grille is the final grille of the player
  * POST: it will print the grille of the player
  */
-
 void printGrille(int* grille);
 
 /**
