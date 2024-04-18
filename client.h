@@ -4,6 +4,8 @@
 
 
 /**
+
+int* initSharedMemoryClient(int key);
  * PRE: grille is the final grille of the player
  * POST: it will print the grille of the player
  */

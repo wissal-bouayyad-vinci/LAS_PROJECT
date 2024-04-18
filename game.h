@@ -28,4 +28,5 @@ int scoreCalculation(int* grille);
  */ 
 int* initBoardGame(int size);
 
+
 #endif
