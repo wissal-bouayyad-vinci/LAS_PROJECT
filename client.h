@@ -32,7 +32,7 @@ int* getsharedMemoryClient(int key);
 /**
  * PRE: tileNumber is number sent by the server for the player
  *      chosenPlace is the place in the table chosen by the player
- *      grille the final grille of the player 
+ *      grille the grille of the player 
  * POST: if the the chosenPlace is free ,the tileNumber will be put
  *       if not, then  tile is placed to the right of the 
  *       requested position.
