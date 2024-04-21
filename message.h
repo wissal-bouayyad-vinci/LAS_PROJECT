@@ -6,6 +6,7 @@
 #define INSCRIPTION_KO 12
 #define START_GAME 13
 #define CANCEL_GAME 14
+#define MAX_PSEUDO 256
 
 
 
