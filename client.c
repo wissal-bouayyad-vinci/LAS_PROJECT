@@ -83,19 +83,34 @@ int main(int argc, char const *argv[])
     {
         printf("START GAME\n");
         // pseudo code : 
-        // initGrille(int size);
-        // boucle : 20 // pas a moi de la faire je crois mais quand même que je dois gerer
-        // NUMERO_TUILE
-        // chosePlacement(int tileNumber, int chosenPlace,char* grille,int size) 
-        // printGrille(char* grille,int size);
-        // boucle
-        // 
+        char* grille =  initGrille();
+        sread(numeroTuile);
+        while(receive a numero tuile){
+            printf("Veuillez choisir un emplacement");
+            printGrille(grille,GRILLE_SIZE);
+            sread(le numero choisi par le joueur);
+            bool PLACEMENT_MSG = choosePlacement(int tileNumber, int chosenPlace,grille);
+            // if false : on redemande ?
+            // if true
+            ret = swrite(envoyer le PLACEMENT_MSG au server);
+            printf("Voici placer : ");
+            printGrille(grille,GRILLE_SIZE);
 
-        // une fois la partie terminer 
-        // score = int scoreCalculation(char* grille,int size);
-        // MES_POINTS(pseudo, score)
-        // recuprer la liste de player et sa taille
-        // printRanking(struct Structplayer* players,int size)
+        }
+        
+        // on a fini le jeux 
+
+        int scoreFinal = scoreCalculation(grille);
+        StructPlayer player ;
+        player.pseudo = pseudo;
+        player.score=scoreFinal;
+        ret = swrite( player);
+
+
+        sread();
+        sread();
+        printRanking(playersTable,size);
+
         //  end 
 
     }else{
