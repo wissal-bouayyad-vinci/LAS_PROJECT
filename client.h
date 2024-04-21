@@ -1,6 +1,11 @@
 #ifndef CLIENT
 #define CLIENT 
 
+/* struct  used between server son and client to send the score */
+typedef struct{
+  char messageText[MAX_PSEUDO];
+  int score;
+}MesPoints; 
 
 
 /* PRE:  grille is the int table with the tile
