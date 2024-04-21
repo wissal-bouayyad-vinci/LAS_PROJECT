@@ -11,6 +11,9 @@
 #define SERVER_IP "127.0.0.1" /* localhost */
 #define BACKLOG 5
 
+//VARIABLES USED IN SERVER AND CLIENT
+#define MAX_PLAYERS 3
+#define MIN_PLAYERS 2
 
 
 #endif
