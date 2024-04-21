@@ -1,5 +1,7 @@
 #include "client.h"
 #include "game.h"
+#include "player.h"
+#include "network_client.h"
 
 void printGrille(char* grille, int size){
 
@@ -22,4 +24,75 @@ void printRanking(struct Structplayer* players,int size){
     }
 
 }
+
+
+int main(int argc, char const *argv[])
+{
+    // attributs : 
+    pseudo[MAX_PSEUDO];
+    int sockfd;
+    int ret;
+
+    StructMessage message;
+
+    // recup
+    printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.");
+    printf("Pour cela votre pseudo : ");
+    ret = sread(0,pseudo,MAX_PSEUDO);
+    ckeckNeg(ret,"read client error");
+    pseudo[ret - 1] = '\0';
+    strcpy(message.messageText,pseudo);
+    message.code = INSCRIPTION_REQUEST;
+
+    // start socket
+    sockfd = initSocketClient(SERVER_IP,SERVER_PORT);
+
+    swrite(sockfd,&message,sizeof(message));
+
+    /* wait server response */
+    sread(sockfd, &message, sizeof(msg));
+
+    switch(message.code){   
+        case INSCRIPTION_OK:
+            printf("Réponse Serveur: INSCRIPTION acceptée");
+            break;
+        case INSCRIPTION_KO:
+            printf("Réponse Serveur: INSCRIPTION refusée");
+            break;
+
+        default:
+            printf("Réponse Serveur: non prevue %d", message.code);
+            break;
+    }
+
+
+    /*wait to know if the game START oR CANCEL*/
+    sread(sockfd,&message,sizeof(message));
+
+    if (message.code == START_GAME)
+    {
+        printf("DEBUT JEU\n");
+
+
+    }else{
+        printf("CANCEL GAME");
+        sclose(sockfd);
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
