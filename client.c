@@ -30,7 +30,7 @@ void printRanking(struct Structplayer* players,int size){
 
     for (int i = 0; i < size; ++i)
     {
-        printf("%d. %c\n",(i+1),players[i].pseudo);
+        printf("%d. %c with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
     }
 
 }
@@ -64,14 +64,14 @@ int main(int argc, char const *argv[])
 
     switch(message.code){   
         case INSCRIPTION_OK:
-            printf("Réponse Serveur: INSCRIPTION acceptée");
+            printf("Réponse Serveur: INSCRIPTION acceptée.");
             break;
         case INSCRIPTION_KO:
-            printf("Réponse Serveur: INSCRIPTION refusée");
+            printf("Réponse Serveur: INSCRIPTION refusée.");
             break;
 
         default:
-            printf("Réponse Serveur: non prevue %d", message.code);
+            printf("Réponse Serveur: non prevue %d.", message.code);
             break;
     }
 
@@ -82,7 +82,21 @@ int main(int argc, char const *argv[])
     if (message.code == START_GAME)
     {
         printf("START GAME\n");
+        // pseudo code : 
+        // initGrille(int size);
+        // boucle : 20 // pas a moi de la faire je crois mais quand même que je dois gerer
+        // NUMERO_TUILE
+        // chosePlacement(int tileNumber, int chosenPlace,char* grille,int size) 
+        // printGrille(char* grille,int size);
+        // boucle
+        // 
 
+        // une fois la partie terminer 
+        // score = int scoreCalculation(char* grille,int size);
+        // MES_POINTS(pseudo, score)
+        // recuprer la liste de player et sa taille
+        // printRanking(struct Structplayer* players,int size)
+        //  end 
 
     }else{
         printf("CANCEL GAME");

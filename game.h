@@ -16,7 +16,7 @@ int TablePoints[] = {0, 1, 3, 5, 7, 9, 11, 15, 20, 25, 30, 35, 40, 50, 60, 70, 8
  *       requested position.
  * RES:  once the tile is placed true will be returned
  */
-bool chosePlacement(int tileNumber, int chosenPlace,char* grille,int size);
+bool choosePlacement(int tileNumber, int chosenPlace,char* grille,int size);
 
 /**
  * PRE: grille is the final grille of the player

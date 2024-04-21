@@ -1,9 +1,9 @@
 #include "game.h"
 
-char* initGrille(int size){
-    char grille[size];
+char* initGrille(){
+    char grille[GRILLE_SIZE];
 
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < GRILLE_SIZE; ++i)
     {
         grille[i] = '-';
     }
@@ -11,40 +11,42 @@ char* initGrille(int size){
     return grille;
 }
 
-bool chosePlacement(int tileNumber, int chosenPlace,char* grille,int size){
-    if (chosenPlace < 0 || chosenPlace >= size ) {
+bool choosePlacement(char tileNumber, int chosenPlace,char* grille){
+
+    int placeNumber = chosenPlace-1;
+
+    if (placeNumber < 0 || placeNumber >= GRILLE_SIZE ) {
         printf("Veuillez choisir une place viable.");
         return false;
     }
 
-    while (chosenPlace < size && grille[chosenPlace] != '-'){
-        chosenPlace++;
+    while (grille[placeNumber] != '-'){
+        placeNumber++;
+
+        if (placeNumber == (GRILLE_SIZE-1)) {
+            placeNumber=0;
+        }
     }
 
-    if (chosenPlace >= size) {
-        printf("Veuillez choisir une autre place.");
-        return false;
-    }
-
-    grille[chosenPlace]=tileNumber+'0';
+    grille[placeNumber]=tileNumber;
     return true;
 }
 
 
 
-int scoreCalculation(char* grille,int size){
+int scoreCalculation(char* grille){
     int points = 0;
-    int suite_lenght =0;
+    int suite_lenght =1;
 
 
-    for (int i = 0; i < size; ++i)
-    {
+    for (int i = 1; i < GRILLE_SIZE; ++i){
+
         if (grille[i]>grille[i-1])
         {
             suite_lenght++;
         }else{
             points+=TablePoints[suite_lenght];
-            suite_lenght=0;
+            suite_lenght=1;
         }
     }
 
