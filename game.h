@@ -3,6 +3,9 @@
 
 #define GRILLE_SIZE 20
 
+int TablePoints[] = {0, 1, 3, 5, 7, 9, 11, 15, 20, 25, 30, 35, 40, 50, 60, 70, 85, 100, 150, 300};
+
+
 /**
  * PRE: tileNumber is number sent by the server for the player
  *      chosenPlace is the place in the table chosen by the player
@@ -17,10 +20,11 @@ bool chosePlacement(int tileNumber, int chosenPlace,char* grille,int size);
 
 /**
  * PRE: grille is the final grille of the player
+ *      size id the size of the grille
  * POST: it will calculate the final score of the player
  * RES: return the final score
  */
-int scoreCalculation(int* grille);
+int scoreCalculation(char* grille,int size);
 
 
 /**

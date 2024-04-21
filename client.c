@@ -7,7 +7,7 @@ void printGrille(char* grille, int size){
 
     for (int i = 0; i < size; ++i)
     {
-        printf("case n°%s : %d  |\n  ", (i+1),grille[i]);
+        printf("case n°%d : %c  |\n  ", (i+1),grille[i]);
     }
 }
 
@@ -18,7 +18,7 @@ void printRanking(struct Structplayer* players,int size){
 
     for (int i = 0; i < size; ++i)
     {
-        printf("%d. %s\n",(i+1),players[i].pseudo);
+        printf("%d. %c\n",(i+1),players[i].pseudo);
     }
 
 }

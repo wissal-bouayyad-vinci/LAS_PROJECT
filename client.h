@@ -18,8 +18,5 @@ void printGrille(char* grille,int size);
 void printRanking(struct Structplayer* players,int size);
 
 
-
-
-
 #endif
 
