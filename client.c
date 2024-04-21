@@ -1,3 +1,13 @@
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include "client.h"
 #include "game.h"
 #include "player.h"
@@ -71,7 +81,7 @@ int main(int argc, char const *argv[])
 
     if (message.code == START_GAME)
     {
-        printf("DEBUT JEU\n");
+        printf("START GAME\n");
 
 
     }else{
