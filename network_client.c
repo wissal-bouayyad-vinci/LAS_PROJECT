@@ -5,3 +5,12 @@ int initSocketClient(char * serverIP, int serverPort){
     sconnect(serverIP, serverPort, sockfd);
     return sockfd;
 }
+
+
+int getSocketServer() {
+    int server_socket;
+    server_socket = ssocket();
+    sbind(SERVER_PORT, server_socket);
+    slisten(server_socket);
+    return server_socket;
+}

@@ -11,8 +11,13 @@
  */
 int initSocketClient(char * serverIP, int serverPort);
 
-
-getSocketServer
+/**
+ * PRE : serverIP: a valid IP address
+ *       serverPort: a valid port number
+ * POST: On success, the client socket is connected to serverIP:serverPort.
+ * RES: Returns the socket file descriptor on success.
+ */ 
+int getSocketServer() ;
 
 
 #endif

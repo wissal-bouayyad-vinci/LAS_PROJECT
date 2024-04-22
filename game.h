@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H 
 
+
+#include <stdbool.h>
 #define GRILLE_SIZE 20
 
 int TablePoints[] = {0, 1, 3, 5, 7, 9, 11, 15, 20, 25, 30, 35, 40, 50, 60, 70, 85, 100, 150, 300};

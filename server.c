@@ -22,8 +22,7 @@ void endServerHandler(int sig)
     end_inscriptions = 1;
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]){
     int sockfd;
     StructMessage msg;
     struct pollfd fds[MAX_PLAYERS];

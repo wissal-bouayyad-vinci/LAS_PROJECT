@@ -9,6 +9,6 @@
  *       on failure, displays error cause and quits the program
  * RES:  return socket file descriptor
  */
-int initSocketServer(int port)
+int initSocketServer(int port);
 
 #endif

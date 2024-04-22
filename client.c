@@ -62,11 +62,12 @@ int main(int argc, char const *argv[])
 
     // start socket
     sockfd = initSocketClient(SERVER_IP,SERVER_PORT);
+    sockfdServer = getSocketServer(SERVER_PORT);
 
     swrite(sockfd,&message,sizeof(message));
 
     /* wait server response */
-    sread(sockfd, &message, sizeof(msg));
+    sread(sockfdServer, &message, sizeof(msg));
 
     switch(message.code){   
         case INSCRIPTION_OK:
@@ -83,7 +84,7 @@ int main(int argc, char const *argv[])
 
 
     /*wait to know if the game START oR CANCEL*/
-    sread(sockfd,&message,sizeof(message));
+    sread(sockfdServer,&message,sizeof(message));
 
     if (message.code == START_GAME)
     {
@@ -91,7 +92,7 @@ int main(int argc, char const *argv[])
         // pseudo code : 
         char* grille =  initGrille();
         ;
-       while(sread(sockfd,&message,sizeof(message))){ 
+       while(sread(sockfdServer,&message,sizeof(message))){ 
             if (message.code==NUMERO_TUILE){
                 tileNumber = message.messageText;
             
@@ -124,12 +125,12 @@ int main(int argc, char const *argv[])
             ret = swrite(sockfd,&player,sizeof(player));
 
 
-            while(sread(sockfd,&message,sizeof(message))){
+            while(sread(sockfdServer,&message,sizeof(message))){
                 if (message.messageText==RANKING){
                     struct StructPlayer* players;
                     int size;
-                    sread(sockfd,&players,sizeof(players));
-                    sread(sockfd,&size,sizeof(size));
+                    sread(sockfdServer,&players,sizeof(players));
+                    sread(sockfdServer,&size,sizeof(size));
                     printRanking(players,size);
                 
                 }else{
@@ -153,18 +154,4 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
