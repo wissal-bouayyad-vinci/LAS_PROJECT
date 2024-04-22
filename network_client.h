@@ -12,7 +12,7 @@
 int initSocketClient(char * serverIP, int serverPort);
 
 
-
+getSocketServer
 
 
 #endif
