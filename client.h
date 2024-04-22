@@ -7,7 +7,7 @@
  *      grille is the  grille of the player
  * POST: it will print the grille of the player
  */
-void printGrille(char* grille,int size);
+void printGrille(char** grille,int size);
 
 /**
  * PRE: player is a table of player organized by their score

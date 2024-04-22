@@ -13,13 +13,17 @@
 #include "player.h"
 #include "network_client.h"
 
-void printGrille(char* grille, int size){
+
+volatile sig_atomic_t cptGame=0;
+
+
+void printGrille(char** grille, int size){
 
     printf("GRILLE DE JEUX\n");
 
     for (int i = 0; i < size; ++i)
     {
-        printf("case n°%d : %c  |\n  ", (i+1),grille[i]);
+        printf("case n°%d : %s  |\n  ", (i+1),grille[i]);
     }
 }
 
@@ -42,6 +46,8 @@ int main(int argc, char const *argv[])
     pseudo[MAX_PSEUDO];
     int sockfd;
     int ret;
+    char tileNumber;
+    int chosenPlacement;
 
     StructMessage message;
 
@@ -84,34 +90,61 @@ int main(int argc, char const *argv[])
         printf("START GAME\n");
         // pseudo code : 
         char* grille =  initGrille();
-        sread(numeroTuile);
-        while(receive a numero tuile){
-            printf("Veuillez choisir un emplacement");
-            printGrille(grille,GRILLE_SIZE);
-            sread(le numero choisi par le joueur);
-            bool PLACEMENT_MSG = choosePlacement(int tileNumber, int chosenPlace,grille);
-            // if false : on redemande ?
-            // if true
-            ret = swrite(envoyer le PLACEMENT_MSG au server);
-            printf("Voici placer : ");
-            printGrille(grille,GRILLE_SIZE);
-
-        }
+        ;
+       while(sread(sockfd,&message,sizeof(message))){ 
+            if (message.code==NUMERO_TUILE){
+                tileNumber = message.messageText;
+            
+                printf("Veuillez choisir un emplacement : \n");
+                printGrille(grille,GRILLE_SIZE);
+                sread(0,&chosenPlacement,1);
+                char placeGrille = chosenPlacement+'0';
+                bool PLACEMENT_MSG = choosePlacement(tileNumber,placeGrille,grille);
+                while (!PLACEMENT_MSG){
+                   bool PLACEMENT_MSG = choosePlacement(tileNumber,placeGrille,grille);                
+                }
+                // if true
+                message.code = PLACEMENT_TERMINE;
+                ret = swrite(sockfd,&message,sizeof(message));
+                printf("Voici vos placement : \n");
+                printGrille(grille,GRILLE_SIZE);
+                cptGame++;
+            }else{
+                printf("Réponse Serveur: non prevue %d.", message.code);
+            }
+        }                
         
         // on a fini le jeux 
+        if (cptGame==20){
+            
+            int scoreFinal = scoreCalculation(grille);
+            StructPlayer player ;
+            player.pseudo = pseudo;
+            player.score=scoreFinal;
+            ret = swrite(sockfd,&player,sizeof(player));
 
-        int scoreFinal = scoreCalculation(grille);
-        StructPlayer player ;
-        player.pseudo = pseudo;
-        player.score=scoreFinal;
-        ret = swrite( player);
+
+            while(sread(sockfd,&message,sizeof(message))){
+                if (message.messageText==RANKING){
+                    struct StructPlayer* players;
+                    int size;
+                    sread(sockfd,&players,sizeof(players));
+                    sread(sockfd,&size,sizeof(size));
+                    printRanking(players,size);
+                
+                }else{
+                    printf("Réponse Serveur: non prevue %d.", message.code);                
+                }
+            }
+
+            //  end 
+            printf("END GAME");
+            sclose(sockfd);
+
+        }
+            
 
 
-        sread();
-        sread();
-        printRanking(playersTable,size);
-
-        //  end 
 
     }else{
         printf("CANCEL GAME");

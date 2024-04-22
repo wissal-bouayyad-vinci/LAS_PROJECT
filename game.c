@@ -1,7 +1,7 @@
 #include "game.h"
 
-char* initGrille(){
-    char grille[GRILLE_SIZE];
+char** initGrille(){
+    char* grille[GRILLE_SIZE];
 
     for (int i = 0; i < GRILLE_SIZE; ++i)
     {
@@ -11,7 +11,7 @@ char* initGrille(){
     return grille;
 }
 
-bool choosePlacement(char tileNumber, int chosenPlace,char* grille){
+bool choosePlacement(char* tileNumber, int chosenPlace,char** grille){
 
     int placeNumber = chosenPlace-1;
 
@@ -34,15 +34,19 @@ bool choosePlacement(char tileNumber, int chosenPlace,char* grille){
 
 
 
-int scoreCalculation(char* grille){
+int scoreCalculation(char** grille){
     int points = 0;
     int suite_lenght =1;
 
 
     for (int i = 1; i < GRILLE_SIZE; ++i){
-
-        if (grille[i]>grille[i-1])
+        if (grille[i+1]=='J')
         {
+            suite_lenght++;
+            BJ = grille[i];
+        // a finir 
+
+        }else if (grille[i]>grille[i-1]){
             suite_lenght++;
         }else{
             points+=TablePoints[suite_lenght];
