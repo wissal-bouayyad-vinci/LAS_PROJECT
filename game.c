@@ -37,40 +37,39 @@ bool choosePlacement(char* tileNumber, int chosenPlace,int* grille){
 
 int scoreCalculation(int* grille){
     int points = 0;
-    int suite_lenght =1;
-
+    int sequence_length =1;
     int BJKER = 0;        
 
     for (int i = 1; i < GRILLE_SIZE; ++i){
 
         if (BJKER!=0)
         {
-            if (grille[i]>BJKER)
+            if (grille[i]>=BJKER)
             {
-                suite_lenght++:
+                sequence_length++;
             }else{
-            points+=TablePoints[suite_lenght];
-            suite_lenght=1;
-
-        }
+            points+=TablePoints[sequence_length];
+            sequence_length=1;
+            }
         
         BJKER=0;
         }
-        if (grille[i]>grille[i-1] ){
+
+        if (grille[i]>=grille[i-1] ){
             if (grille[i]==31)
             {
-                BJKER==grille[i-1];
+                BJKER=grille[i-1];
             }
         
-            suite_lenght++;
+            sequence_length++;
         
         }else{
-            points+=TablePoints[suite_lenght];
-            suite_lenght=1;
+            points+=TablePoints[sequence_length];
+            sequence_length=1;
         }
     }
 
-    points+=TablePoints[suite_lenght];
+    points+=TablePoints[sequence_length];
     return points;
 }
 
