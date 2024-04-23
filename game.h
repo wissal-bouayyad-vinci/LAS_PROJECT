@@ -18,7 +18,7 @@ int TablePoints[] = {0, 1, 3, 5, 7, 9, 11, 15, 20, 25, 30, 35, 40, 50, 60, 70, 8
  *       requested position.
  * RES:  once the tile is placed true will be returned
  */
-bool choosePlacement(char* tileNumber, int chosenPlace,char* grille);
+bool choosePlacement(int tileNumber, int chosenPlace,int* grille);
 
 /**
  * PRE: grille is the final grille of the player
@@ -26,7 +26,7 @@ bool choosePlacement(char* tileNumber, int chosenPlace,char* grille);
  * POST: it will calculate the final score of the player
  * RES: return the final score
  */
-int scoreCalculation(char* grille);
+int scoreCalculation(int* grille);
 
 
 /**
@@ -34,7 +34,7 @@ int scoreCalculation(char* grille);
  * POST: it will create a table of size size
  * RES: return a int table
  */ 
-char* initGrille();
+int* initGrille();
 
 
 #endif

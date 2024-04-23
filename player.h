@@ -4,7 +4,7 @@
 #define MAX_PSEUDO 256
 
 /* struct player used between server and client*/
-typedef struct {
+typedef struct Structplayer {
     char pseudo[MAX_PSEUDO];
     int score;
 } Structplayer;

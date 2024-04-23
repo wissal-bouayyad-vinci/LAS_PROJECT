@@ -16,6 +16,7 @@
 typedef struct
 {
   char messageText[MAX_PSEUDO];
+  int tuile;
   int code;
 } StructMessage;
 

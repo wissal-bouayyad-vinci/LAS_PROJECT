@@ -1,20 +1,20 @@
 CC=gcc
 CCFLAGS=-D_DEFAULT_SOURCE -D_XOPEN_SOURCE -D_BSD_SOURCE -std=c11 -pedantic -Wvla -Wall -Werror
 
-all:  client game ipc  network_client network_server
+all:  server client game ipc  network_client network_server
 
 #SERVER
-# server : server.o utils_v1.o
-# 	$(CC) $(CCFLAGS) -o server server.o utils_v1.o
-# server.o: server.c utils_v1.h
-# 	$(CC) $(CCFLAGS) -c server.c
+server : server.o utils_v1.o
+	$(CC) $(CCFLAGS) -o server server.o utils_v1.o
+server.o: server.c utils_v1.h
+	$(CC) $(CCFLAGS) -c server.c
 
 #CLIENT
-client.o: client.c utils_v1.h
-	$(CC) $(CCFLAGS) -c client.c
 client : client.o utils_v1.o
 	$(CC) $(CCFLAGS) -o client client.o utils_v1.o
-
+client.o: client.c utils_v1.h
+	$(CC) $(CCFLAGS) -c client.c
+	
 #GAME
 game : game.o utils_v1.o
 	$(CC) $(CCFLAGS) -o game game.o utils_v1.o

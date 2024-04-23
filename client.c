@@ -8,22 +8,24 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "client.h"
-#include "game.h"
 #include "player.h"
+#include "game.h"
 #include "network_client.h"
-
+#include "message.h"
+#include "utils_v1.h"
+#include "config.h"
+#include "client.h"
 
 volatile sig_atomic_t cptGame=0;
 
 
-void printGrille(char** grille, int size){
+void printGrille(int* grille, int size){
 
     printf("GRILLE DE JEUX\n");
 
     for (int i = 0; i < size; ++i)
     {
-        printf("case n°%d : %s  |\n  ", (i+1),grille[i]);
+        printf("case n°%d : %d  |\n  ", (i+1),grille[i]);
     }
 }
 
@@ -34,7 +36,7 @@ void printRanking(struct Structplayer* players,int size){
 
     for (int i = 0; i < size; ++i)
     {
-        printf("%d. %c with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
+        printf("%d. %s with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
     }
 
 }
@@ -43,10 +45,10 @@ void printRanking(struct Structplayer* players,int size){
 int main(int argc, char const *argv[])
 {
     // attributs : 
-    pseudo[MAX_PSEUDO];
+    char pseudoPlayer[MAX_PSEUDO];
     int sockfd;
     int ret;
-    char tileNumber;
+    int tileNumber;
     int chosenPlacement;
 
     StructMessage message;
@@ -54,20 +56,18 @@ int main(int argc, char const *argv[])
     // recup
     printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.");
     printf("Pour cela votre pseudo : ");
-    ret = sread(0,pseudo,MAX_PSEUDO);
-    ckeckNeg(ret,"read client error");
-    pseudo[ret - 1] = '\0';
-    strcpy(message.messageText,pseudo);
+    ret = sread(0,pseudoPlayer,MAX_PSEUDO);
+    pseudoPlayer[ret - 1] = '\0';
+    strcpy(message.messageText,pseudoPlayer);
     message.code = INSCRIPTION_REQUEST;
 
     // start socket
     sockfd = initSocketClient(SERVER_IP,SERVER_PORT);
-    sockfdServer = getSocketServer(SERVER_PORT);
 
     swrite(sockfd,&message,sizeof(message));
 
     /* wait server response */
-    sread(sockfdServer, &message, sizeof(msg));
+    sread(sockfd, &message, sizeof(message));
 
     switch(message.code){   
         case INSCRIPTION_OK:
@@ -84,25 +84,24 @@ int main(int argc, char const *argv[])
 
 
     /*wait to know if the game START oR CANCEL*/
-    sread(sockfdServer,&message,sizeof(message));
+    sread(sockfd,&message,sizeof(message));
 
     if (message.code == START_GAME)
     {
         printf("START GAME\n");
-        // pseudo code : 
-        char* grille =  initGrille();
-        ;
-       while(sread(sockfdServer,&message,sizeof(message))){ 
+        // pseudoPlayer code : 
+        int* grille =  initGrille();
+        
+       while(sread(sockfd,&message,sizeof(message))){ 
             if (message.code==NUMERO_TUILE){
-                tileNumber = message.messageText;
+                tileNumber = message.tuile;
             
                 printf("Veuillez choisir un emplacement : \n");
                 printGrille(grille,GRILLE_SIZE);
                 sread(0,&chosenPlacement,1);
                 char placeGrille = chosenPlacement+'0';
-                bool PLACEMENT_MSG = choosePlacement(tileNumber,placeGrille,grille);
-                while (!PLACEMENT_MSG){
-                   bool PLACEMENT_MSG = choosePlacement(tileNumber,placeGrille,grille);                
+                while (!choosePlacement(tileNumber,placeGrille,grille)){
+                   choosePlacement(tileNumber,placeGrille,grille);                
                 }
                 // if true
                 message.code = PLACEMENT_TERMINE;
@@ -119,18 +118,18 @@ int main(int argc, char const *argv[])
         if (cptGame==20){
             
             int scoreFinal = scoreCalculation(grille);
-            StructPlayer player ;
-            player.pseudo = pseudo;
+            Structplayer player ;
+            strcpy(player.pseudo,pseudoPlayer);
             player.score=scoreFinal;
             ret = swrite(sockfd,&player,sizeof(player));
 
 
-            while(sread(sockfdServer,&message,sizeof(message))){
-                if (message.messageText==RANKING){
-                    struct StructPlayer* players;
+            while(sread(sockfd,&message,sizeof(message))){
+                if ((message.code==RANKING)){
+                    struct Structplayer* players;
                     int size;
-                    sread(sockfdServer,&players,sizeof(players));
-                    sread(sockfdServer,&size,sizeof(size));
+                    sread(sockfd,&players,sizeof(players));
+                    sread(sockfd,&size,sizeof(size));
                     printRanking(players,size);
                 
                 }else{

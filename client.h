@@ -1,13 +1,14 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include "player.h"
 
 /* PRE:  grille is the int table with the tile
  *      size is the size of the grille (20)
  *      grille is the  grille of the player
  * POST: it will print the grille of the player
  */
-void printGrille(char** grille,int size);
+void printGrille(int* grille,int size);
 
 /**
  * PRE: player is a table of player organized by their score
