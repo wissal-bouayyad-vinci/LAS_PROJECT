@@ -39,16 +39,31 @@ int scoreCalculation(int* grille){
     int points = 0;
     int suite_lenght =1;
 
+    int BJKER = 0;        
 
     for (int i = 1; i < GRILLE_SIZE; ++i){
-        if (grille[i+1]==31)
-        {
-            suite_lenght++;
-            BJ = grille[i];
-        // a finir 
 
-        }else if (grille[i]>grille[i-1]){
+        if (BJKER!=0)
+        {
+            if (grille[i]>BJKER)
+            {
+                suite_lenght++:
+            }else{
+            points+=TablePoints[suite_lenght];
+            suite_lenght=1;
+
+        }
+        
+        BJKER=0;
+        }
+        if (grille[i]>grille[i-1] ){
+            if (grille[i]==31)
+            {
+                BJKER==grille[i-1];
+            }
+        
             suite_lenght++;
+        
         }else{
             points+=TablePoints[suite_lenght];
             suite_lenght=1;

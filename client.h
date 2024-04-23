@@ -15,7 +15,7 @@ void printGrille(int* grille,int size);
  *      size is the size of the table (number of players)
  * POST:it will print the ranking
  */ 
-void printRanking(struct Structplayer* players,int size);
+void printRanking( Structplayer* players,int size);
 
 
 #endif

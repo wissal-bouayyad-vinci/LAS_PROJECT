@@ -30,7 +30,7 @@ void printGrille(int* grille, int size){
 }
 
 
-void printRanking(struct Structplayer* players,int size){
+void printRanking( Structplayer* players,int size){
 
     printf("RANKING FINAL\n");
 
