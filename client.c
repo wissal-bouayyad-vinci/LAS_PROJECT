@@ -1,12 +1,12 @@
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 
 #include "player.h"
 #include "game.h"
@@ -16,17 +16,24 @@
 #include "config.h"
 #include "client.h"
 
-volatile sig_atomic_t cptGame=0;
-
 
 void printGrille(int* grille, int size){
 
     printf("GRILLE DE JEUX\n");
 
+    printf("%2s ", "");
     for (int i = 0; i < size; ++i)
     {
-        printf("case n°%d : %d  |\n  ", (i+1),grille[i]);
+        printf("%3d ", (i+1));
     }
+    printf("\n");
+
+    printf("%2s ", "");
+    for (int i = 0; i < size; ++i)
+    {
+        printf("%3d ",grille[i]);
+    }
+    printf("\n");
 }
 
 
@@ -50,7 +57,7 @@ int main(int argc, char const *argv[])
     int ret;
     int tileNumber;
     int chosenPlacement;
-
+    int cptGame=0;
     StructMessage message;
 
     // recup
@@ -96,13 +103,12 @@ int main(int argc, char const *argv[])
             if (message.code==NUMERO_TUILE){
                 tileNumber = message.tuile;
             
-                printf("Veuillez choisir un emplacement : \n");
-                printGrille(grille,GRILLE_SIZE);
-                sread(0,&chosenPlacement,1);
-                char placeGrille = chosenPlacement+'0';
-                while (!choosePlacement(tileNumber,placeGrille,grille)){
-                   choosePlacement(tileNumber,placeGrille,grille);                
-                }
+                do {
+                    printf("Veuillez choisir un emplacement : \n");
+                    printGrille(grille, GRILLE_SIZE);
+                    sread(sockfd, &chosenPlacement, sizeof(chosenPlacement));
+                } while (!choosePlacement(tileNumber, chosenPlacement, grille));
+                
                 // if true
                 message.code = PLACEMENT_TERMINE;
                 ret = swrite(sockfd,&message,sizeof(message));
@@ -131,7 +137,7 @@ int main(int argc, char const *argv[])
                     sread(sockfd,&players,sizeof(players));
                     sread(sockfd,&size,sizeof(size));
                     printRanking(players,size);
-                
+                    free(players);
                 }else{
                     printf("Réponse Serveur: non prevue %d.", message.code);                
                 }
