@@ -1,7 +1,7 @@
 #ifndef MESSAGES_H_
 #define MESSAGES_H_
 
-#define MAX_PSEUDO 256
+#define MAX_TEXT 256
 
 #define INSCRIPTION_REQUEST 10
 #define INSCRIPTION_OK 11
@@ -12,7 +12,7 @@
 /* struct message used between server and client */
 typedef struct
 {
-  char messageText[MAX_PSEUDO];
+  char messageText[MAX_TEXT];
   int code;
 } StructMessage;
 
