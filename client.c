@@ -121,7 +121,7 @@ int main(int argc, char const *argv[])
         }                
         
         // on a fini le jeux 
-        if (cptGame==20){
+        if (cptGame==MAX_NUMBER_TURN){
             
             int scoreFinal = scoreCalculation(grille);
             Structplayer player ;

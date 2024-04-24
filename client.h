@@ -1,6 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#define MAX_NUMBER_TURN 20
 #include "player.h"
 
 /* PRE:  grille is the int table with the tile
