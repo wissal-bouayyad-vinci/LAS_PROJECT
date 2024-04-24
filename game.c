@@ -1,7 +1,7 @@
 #include "game.h"
 
 int* initGrille(){
-    char* grille[GRILLE_SIZE];
+    char grille[GRILLE_SIZE];
 
     for (int i = 0; i < GRILLE_SIZE; ++i)
     {
