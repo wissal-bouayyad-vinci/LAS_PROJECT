@@ -33,6 +33,9 @@ static void child_trt(void *pipeV)
     //ENVOYER CE MESSAGE AU CLIENT:
     swrite(newsockfd, &msg, sizeof(StructMessage));
 
+
+
+
     //FERMER LA CONNECTION AVEC LE CLIENT
     sclose(newsockfd);
     //FERMER LA CONNECTION D'ÉCOUTE
@@ -127,7 +130,7 @@ int main(int argc, char const *argv[])
         msg.messageText = "Partie annulée : joueurs insuffisants";
         
         //ON ECRIT UN MESSAGE POUR LE SERVEUR FILS
-        int nbChar = swrite(pipefd[1], &msgcode, sizeof(StructMessage));
+        int nbChar = swrite(pipefd[1], &msg, sizeof(StructMessage));
 
         // ON CLOTURE LE CÔTÉ ÉCRITURE DU PIPE
         ret2 = sclose(pipefd[1]);

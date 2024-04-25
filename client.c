@@ -1,36 +1,49 @@
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 
-#include "client.h"
-#include "game.h"
 #include "player.h"
+#include "game.h"
 #include "network_client.h"
+#include "message.h"
+#include "utils_v1.h"
+#include "config.h"
+#include "client.h"
 
-void printGrille(char* grille, int size){
+
+void printGrille(int* grille, int size){
 
     printf("GRILLE DE JEUX\n");
 
+    printf("%2s ", "");
     for (int i = 0; i < size; ++i)
     {
-        printf("case n°%d : %c  |\n  ", (i+1),grille[i]);
+        printf("%3d ", (i+1));
     }
+    printf("\n");
+
+    printf("%2s ", "");
+    for (int i = 0; i < size; ++i)
+    {
+        printf("%3d ",grille[i]);
+    }
+    printf("\n");
 }
 
 
-void printRanking(struct Structplayer* players,int size){
+void printRanking( Structplayer* players,int size){
 
     printf("RANKING FINAL\n");
 
     for (int i = 0; i < size; ++i)
     {
-        printf("%d. %c\n",(i+1),players[i].pseudo);
+        printf("%d. %s with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
     }
 
 }
@@ -39,19 +52,20 @@ void printRanking(struct Structplayer* players,int size){
 int main(int argc, char const *argv[])
 {
     // attributs : 
-    pseudo[MAX_PSEUDO];
+    char pseudoPlayer[MAX_PSEUDO];
     int sockfd;
     int ret;
-
+    int tileNumber;
+    int chosenPlacement;
+    int cptGame=0;
     StructMessage message;
 
     // recup
     printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.");
     printf("Pour cela votre pseudo : ");
-    ret = sread(0,pseudo,MAX_PSEUDO);
-    ckeckNeg(ret,"read client error");
-    pseudo[ret - 1] = '\0';
-    strcpy(message.messageText,pseudo);
+    ret = sread(0,pseudoPlayer,MAX_PSEUDO);
+    pseudoPlayer[ret - 1] = '\0';
+    strcpy(message.messageText,pseudoPlayer);
     message.code = INSCRIPTION_REQUEST;
 
     // start socket
@@ -60,18 +74,18 @@ int main(int argc, char const *argv[])
     swrite(sockfd,&message,sizeof(message));
 
     /* wait server response */
-    sread(sockfd, &message, sizeof(msg));
+    sread(sockfd, &message, sizeof(message));
 
     switch(message.code){   
         case INSCRIPTION_OK:
-            printf("Réponse Serveur: INSCRIPTION acceptée");
+            printf("Réponse Serveur: INSCRIPTION acceptée.");
             break;
         case INSCRIPTION_KO:
-            printf("Réponse Serveur: INSCRIPTION refusée");
+            printf("Réponse Serveur: INSCRIPTION refusée.");
             break;
 
         default:
-            printf("Réponse Serveur: non prevue %d", message.code);
+            printf("Réponse Serveur: non prevue %d.", message.code);
             break;
     }
 
@@ -82,6 +96,60 @@ int main(int argc, char const *argv[])
     if (message.code == START_GAME)
     {
         printf("START GAME\n");
+        // pseudoPlayer code : 
+        int* grille =  initGrille();
+        
+       while(sread(sockfd,&message,sizeof(message))){ 
+            if (message.code==NUMERO_TUILE){
+                tileNumber = message.tuile;
+            
+                do {
+                    printf("Veuillez choisir un emplacement : \n");
+                    printGrille(grille, GRILLE_SIZE);
+                    sread(sockfd, &chosenPlacement, sizeof(chosenPlacement));
+                } while (!choosePlacement(tileNumber, chosenPlacement, grille));
+                
+                // if true
+                message.code = PLACEMENT_TERMINE;
+                ret = swrite(sockfd,&message,sizeof(message));
+                printf("Voici vos placement : \n");
+                printGrille(grille,GRILLE_SIZE);
+                cptGame++;
+            }else{
+                printf("Réponse Serveur: non prevue %d.", message.code);
+            }
+        }                
+        
+        // on a fini le jeux 
+        if (cptGame==MAX_NUMBER_TURN){
+            
+            int scoreFinal = scoreCalculation(grille);
+            Structplayer player ;
+            strcpy(player.pseudo,pseudoPlayer);
+            player.score=scoreFinal;
+            ret = swrite(sockfd,&player,sizeof(player));
+
+
+            while(sread(sockfd,&message,sizeof(message))){
+                if ((message.code==RANKING)){
+                    struct Structplayer* players;
+                    int size;
+                    sread(sockfd,&players,sizeof(players));
+                    sread(sockfd,&size,sizeof(size));
+                    printRanking(players,size);
+                    free(players);
+                }else{
+                    printf("Réponse Serveur: non prevue %d.", message.code);                
+                }
+            }
+
+            //  end 
+            printf("END GAME");
+            sclose(sockfd);
+
+        }
+            
+
 
 
     }else{
@@ -91,18 +159,4 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

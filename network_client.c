@@ -6,3 +6,4 @@ int initSocketClient(char * serverIP, int serverPort){
     sconnect(serverIP, serverPort, sockfd);
     return sockfd;
 }
+
