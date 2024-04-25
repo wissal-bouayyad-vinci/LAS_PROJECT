@@ -31,7 +31,12 @@ void printGrille(int* grille, int size){
     printf("%2s ", "");
     for (int i = 0; i < size; ++i)
     {
-        printf("%3d ",grille[i]);
+        if (grille[i]==31)
+        {
+            printf("Jo");
+        }else{
+            printf("%3d ",grille[i]);
+        }
     }
     printf("\n");
 }
@@ -133,7 +138,7 @@ int main(int argc, char const *argv[])
             while(sread(sockfd,&message,sizeof(message))){
                 if ((message.code==RANKING)){
                     struct Structplayer* players;
-                    int size;
+                    int size;   
                     sread(sockfd,&players,sizeof(players));
                     sread(sockfd,&size,sizeof(size));
                     printRanking(players,size);
