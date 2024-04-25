@@ -1,6 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "player.h"
+
 #define MAX_PLAYERS 3
 #define TIME_INSCRIPTION 30
 #define NUMBER_OF_PLAYS 20
@@ -20,7 +22,7 @@
  * 26, 27, 28, 29, 30, 31;
  */
 
-int* createTiles()
+int* createTiles();
 
 /**
  * PRE: tilebag: It is a Integer table with 40 randomly displayed tiles. 
@@ -32,23 +34,13 @@ int* createTiles()
 int digTile(int* tilebag, int* nextTile);
 
 /**
- * PRE: fds: structure that contains every fd of every signed in player
- *      nbPlayers: number of Players in the game
- * POST: /
- * RES: returns a table of players
+ * PRE: Player: The new player we are going to put in the table of players 
+ *      nbPlayers: number of Players already in the table
+ * POST: The playersTable will contain a new player.
+ *       The number of players will be incremented, due to the new add.
+ * RES: /
  */
-void Structplayer* createPlayersTable (struct pollfd fds, int nbPlayers);
-
-
-
-char envoyerTuile();
-
-void trierRankingParScore();
-
-void makeRanking(adresse ipc);
-
-
-
+void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, int* nbPlayers);
 
 
 #endif

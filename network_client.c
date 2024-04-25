@@ -1,5 +1,5 @@
 #include "network_client.h"
-#include "config.h"
+#include "utils_v1.h"
 
 int initSocketClient(char * serverIP, int serverPort){
     int sockfd = ssocket();

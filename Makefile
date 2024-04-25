@@ -4,33 +4,33 @@ CCFLAGS=-D_DEFAULT_SOURCE -D_XOPEN_SOURCE -D_BSD_SOURCE -std=c11 -pedantic -Wvla
 all:  server client game ipc  network_client network_server
 
 #SERVER
-server : server.o utils_v1.o
-	$(CC) $(CCFLAGS) -o server server.o utils_v1.o
-server.o: server.c utils_v1.h
+server : server.o utils_v1.o network_serveur.o
+	$(CC) $(CCFLAGS) -o server server.o utils_v1.o network_serveur.o
+server.o: server.c server.h utils_v1.h config.h message.h ipc.h network_serveur.h player.h
 	$(CC) $(CCFLAGS) -c server.c
 
 #CLIENT
 client : client.o utils_v1.o
 	$(CC) $(CCFLAGS) -o client client.o utils_v1.o
-client.o: client.c utils_v1.h
+client.o: client.c client.h utils_v1.h config.h player.h game.h network_client.h message.h
 	$(CC) $(CCFLAGS) -c client.c
 	
 #GAME
 game : game.o utils_v1.o
 	$(CC) $(CCFLAGS) -o game game.o utils_v1.o
-game.o: game.c utils_v1.h
+game.o: game.c game.h utils_v1.h 
 	$(CC) $(CCFLAGS) -c game.c
 
 #IPC
 ipc : ipc.o utils_v1.o
 	$(CC) $(CCFLAGS) -o ipc ipc.o utils_v1.o
-ipc.o: ipc.c utils_v1.h
+ipc.o: ipc.c ipc.h utils_v1.h config.h
 	$(CC) $(CCFLAGS) -c ipc.c
 
 #NETWORK_CLIENT
 network_client : network_client.o utils_v1.o
 	$(CC) $(CCFLAGS) -o network_client network_client.o utils_v1.o
-network_client.o: network_client.c utils_v1.h
+network_client.o: network_client.c network_client.h utils_v1.h
 	$(CC) $(CCFLAGS) -c network_client.c
 
 #NETWORK_SERVER
