@@ -1,6 +1,6 @@
 #include "ipc.h"
 #include "utils_v1.h"
-#include  "config.h"
+#include  "network_serveur.h"
 
 int* initSharedMemory(){
     int shm_id = sshmget(SHM_KEY, sizeof(int), IPC_CREAT | PERM);

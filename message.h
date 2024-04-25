@@ -15,7 +15,7 @@
 /* struct message used between server and client */
 typedef struct
 {
-  char messageText[MAX_PSEUDO];
+  char messageText[MAX_TEXT];
   int tuile;
   int code;
 } StructMessage;

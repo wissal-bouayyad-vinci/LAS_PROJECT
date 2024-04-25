@@ -31,7 +31,10 @@ void printGrille(int* grille, int size){
     printf("%2s ", "");
     for (int i = 0; i < size; ++i)
     {
-        if (grille[i]==31)
+        if (grille[i]==-1)
+        {
+            printf("-");
+        }else if (grille[i]==31)
         {
             printf("Jo");
         }else{
@@ -48,6 +51,7 @@ void printRanking( Structplayer* players,int size){
 
     for (int i = 0; i < size; ++i)
     {
+        
         printf("%d. %s with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
     }
 
