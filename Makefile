@@ -45,3 +45,4 @@ utils_v1.o: utils_v1.c utils_v1.h
 clean : 
 	rm *.o
 	rm client
+	rm server
