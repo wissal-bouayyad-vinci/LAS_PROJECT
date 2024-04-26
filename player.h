@@ -8,7 +8,6 @@ typedef struct Structplayer {
     char pseudo[MAX_PSEUDO];
     int sockfd;
     int score;
-    int sockfd;
 } Structplayer;
 
 #endif
