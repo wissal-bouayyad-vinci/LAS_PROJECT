@@ -70,7 +70,7 @@ int main(int argc, char const *argv[])
     StructMessage message;
 
     // recup
-    printf("Bienvenue a vous. Inscrivez vous pour commencer la partie\n.");
+    printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.\n");
     printf("Pour cela votre pseudo : \n");
     ret = sread(0,pseudoPlayer,MAX_PSEUDO);
     pseudoPlayer[ret - 1] = '\0';
@@ -155,7 +155,7 @@ int main(int argc, char const *argv[])
             //  end 
             printf("END GAME\n");
             sclose(sockfd);
-
+            free(grille);
         }
             
 
@@ -164,6 +164,7 @@ int main(int argc, char const *argv[])
     }else{
         printf("CANCEL GAME\n");
         sclose(sockfd);
+        free(grille);
     }
 
     return 0;
