@@ -1,10 +1,5 @@
 #ifndef NETWORK_SERVER_H
 #define NETWORK_SERVER_H
-<<<<<<< HEAD
-
-=======
- 
->>>>>>> 48cfc972f06b663f7c186b1e372c782273df7bd9
 //CLÉS DE MÉMOIRE PARTAGÉE ET SÉMAPHORES 
 #define SHM_KEY 248
 #define SEM_KEY 369

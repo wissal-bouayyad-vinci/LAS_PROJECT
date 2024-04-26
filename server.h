@@ -1,14 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
-<<<<<<< HEAD
-
-#include "player.h"
-
-=======
  
 #include "player.h"
  
->>>>>>> 48cfc972f06b663f7c186b1e372c782273df7bd9
 #define MAX_PLAYERS 3
 #define TIME_INSCRIPTION 30
 #define NUMBER_OF_PLAYS 20
@@ -18,20 +12,6 @@
 #define TOTAL_TILES 40
  
 /**
-<<<<<<< HEAD
- * PRE: /
- * POST: on success creates a random displayed table containing all the necessary tiles.
- * RES: returns a table of randomly displayed tiles, knowing that we have all of theese tiles :
- * 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
- * 11, 11, 12, 12, 13, 13, 14, 14,
- * 15, 15, 16, 16, 17, 17, 18, 18,
- * 19, 19, 20, 21, 22, 23, 24, 25,
- * 26, 27, 28, 29, 30, 31;
- */
-
-int* createTiles();
-
-=======
 * PRE: /
 * POST: on success creates a random displayed table containing all the necessary tiles.
 * RES: returns a table of randomly displayed tiles, knowing that we have all of theese tiles :
@@ -44,7 +24,6 @@ int* createTiles();
  
 int* createTiles();
  
->>>>>>> 48cfc972f06b663f7c186b1e372c782273df7bd9
 /**
 * PRE: tilebag: It is a Integer table with 40 randomly displayed tiles. 
 *      nextTile: It is the index we use to dig the next tile in the tilebag. 
@@ -55,17 +34,6 @@ int* createTiles();
 int digTile(int* tilebag, int* nextTile);
  
 /**
-<<<<<<< HEAD
- * PRE: Player: The new player we are going to put in the table of players 
- *      nbPlayers: number of Players already in the table
- * POST: The playersTable will contain a new player.
- *       The number of players will be incremented, due to the new add.
- * RES: /
- */
-void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, int* nbPlayers);
-
-
-=======
 * PRE: Player: The new player we are going to put in the table of players 
 *      nbPlayers: number of Players already in the table
 * POST: The playersTable will contain a new player.
@@ -75,5 +43,4 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
 void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, int* nbPlayers);
  
  
->>>>>>> 48cfc972f06b663f7c186b1e372c782273df7bd9
 #endif

@@ -7,13 +7,8 @@
 #include "utils_v1.h"
 #include "network_serveur.h"
 #include "config.h"
-<<<<<<< HEAD
 
 
-=======
- 
- 
->>>>>>> 48cfc972f06b663f7c186b1e372c782273df7bd9
 int initSocketServer(int port)
 {
     int sockfd = ssocket();
