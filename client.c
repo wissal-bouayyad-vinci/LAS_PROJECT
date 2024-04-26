@@ -70,8 +70,8 @@ int main(int argc, char const *argv[])
     StructMessage message;
 
     // recup
-    printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.");
-    printf("Pour cela votre pseudo : ");
+    printf("Bienvenue a vous. Inscrivez vous pour commencer la partie\n.");
+    printf("Pour cela votre pseudo : \n");
     ret = sread(0,pseudoPlayer,MAX_PSEUDO);
     pseudoPlayer[ret - 1] = '\0';
     strcpy(message.messageText,pseudoPlayer);
@@ -87,14 +87,14 @@ int main(int argc, char const *argv[])
 
     switch(message.code){   
         case INSCRIPTION_OK:
-            printf("Réponse Serveur: INSCRIPTION acceptée.");
+            printf("Réponse Serveur: INSCRIPTION acceptée.\n");
             break;
         case INSCRIPTION_KO:
-            printf("Réponse Serveur: INSCRIPTION refusée.");
+            printf("Réponse Serveur: INSCRIPTION refusée.\n");
             break;
 
         default:
-            printf("Réponse Serveur: non prevue %d.", message.code);
+            printf("Réponse Serveur: non prevue %d.\n", message.code);
             break;
     }
 
@@ -125,7 +125,7 @@ int main(int argc, char const *argv[])
                 printGrille(grille,GRILLE_SIZE);
                 cptGame++;
             }else{
-                printf("Réponse Serveur: non prevue %d.", message.code);
+                printf("Réponse Serveur: non prevue %d.\n", message.code);
             }
         }                
         
@@ -148,12 +148,12 @@ int main(int argc, char const *argv[])
                     printRanking(players,size);
                     free(players);
                 }else{
-                    printf("Réponse Serveur: non prevue %d.", message.code);                
+                    printf("Réponse Serveur: non prevue %d.\n", message.code);                
                 }
             }
 
             //  end 
-            printf("END GAME");
+            printf("END GAME\n");
             sclose(sockfd);
 
         }
@@ -162,7 +162,7 @@ int main(int argc, char const *argv[])
 
 
     }else{
-        printf("CANCEL GAME");
+        printf("CANCEL GAME\n");
         sclose(sockfd);
     }
 

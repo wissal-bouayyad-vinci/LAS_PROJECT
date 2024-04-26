@@ -11,8 +11,9 @@ server.o: server.c server.h utils_v1.h config.h message.h ipc.h network_serveur.
 	$(CC) $(CCFLAGS) -c server.c
 
 #CLIENT
-client : client.o utils_v1.o
-	$(CC) $(CCFLAGS) -o client client.o utils_v1.o
+client : client.o utils_v1.o game.o network_client.o
+	$(CC) $(CCFLAGS) -o client client.o utils_v1.o game.o network_client.o
+
 client.o: client.c client.h utils_v1.h config.h player.h game.h network_client.h message.h
 	$(CC) $(CCFLAGS) -c client.c
 
@@ -23,14 +24,10 @@ game.o: game.c game.h utils_v1.h
 	$(CC) $(CCFLAGS) -c game.c
 
 #IPC
-ipc : ipc.o utils_v1.o
-	$(CC) $(CCFLAGS) -o ipc ipc.o utils_v1.o
 ipc.o: ipc.c ipc.h utils_v1.h config.h
 	$(CC) $(CCFLAGS) -c ipc.c
 
 #NETWORK_CLIENT
-network_client : network_client.o utils_v1.o
-	$(CC) $(CCFLAGS) -o network_client network_client.o utils_v1.o
 network_client.o: network_client.c network_client.h utils_v1.h
 	$(CC) $(CCFLAGS) -c network_client.c
 
