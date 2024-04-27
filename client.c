@@ -161,7 +161,7 @@ int main(int argc, char const *argv[])
 
 
 
-    }else{
+    }else if(message.code == CANCEL_GAME){
         printf("CANCEL GAME\n");
         sclose(sockfd);
     }

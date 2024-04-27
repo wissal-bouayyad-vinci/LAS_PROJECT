@@ -101,26 +101,38 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
 //*********************************************************************************//
  
 //CHILD_TREATMENT
-void child_trt(void *pipefdIn, void *pipefdOut) {
+void child_trt(void *pipefdIn, void *pipefdOut, void *socket) {
     int *pipefdO = pipefdOut;
     int *pipefdI = pipefdIn;
+    int *newsocket = socket;
  
     //CLOTURE DU DESCRIPTEUR D'ECRITURE SUR LE PIPE
     sclose(pipefdI[1]);
     sclose(pipefdO[0]);
  
-    //ON ATTEND UN MESSAGE DE LA PART DU PERE 
+    //ON ATTEND UN MESSAGE DE LA PART DU PERE : PARTIE ANNULEE OU START GAME 
     StructMessage msg;
     sread(pipefdI[0],&msg,sizeof(StructMessage));
     printf("Message reçu du père : %s",msg.messageText);
  
-    //ENVOYER CE MESSAGE AU CLIENT:
-    char* message = "Message bien recu";
-    // swrite(newsockfd, &msg, sizeof(StructMessage));
-    swrite(pipefdO[1], &message, sizeof(message));
+    //ENVOYER LE MESSAGE DU PERE AU CLIENT
+    swrite(*newsocket, &msg, sizeof(StructMessage));
+
+    //RECEVOIR NUMERO TUILE PERE 20 FOIS
+    for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
+        while(msg.code != NUMERO_TUILE){
+            sread(pipefdI[0],&msg,sizeof(msg));
+        }
+        swrite(*newsocket,&msg,sizeof(msg));
+        while(msg.code != PLACEMENT_TERMINE){
+            sread(*newsocket,&msg,sizeof(msg));
+        }
+        swrite(pipefdO[1], &msg,sizeof(msg));
+     
+    } 
  
     //FERMER LA CONNECTION AVEC LE CLIENT
-    // sclose(newsockfd);
+    sclose(*newsocket);
 }
  
 //*********************************************************************************//
@@ -145,6 +157,7 @@ int main(int argc, char const *argv[]) {
     //VARIABLES
     end = 0;
     int nbPlayers = 0;
+    char* message ;
     // int indexPiocherTuile = 0;
     int newsockfd;
     StructMessage msg;
@@ -153,6 +166,7 @@ int main(int argc, char const *argv[]) {
         perror("ALLOCATION ERROR");
         exit(1);
     }
+    int nextTile = 0;
  
     //ALARMES
     ssigaction (SIGALRM, endServerHandler);
@@ -194,11 +208,13 @@ int main(int argc, char const *argv[]) {
  
                     addPlayerToTable(tabPlayers , newPlayer, &nbPlayers);
                     //CREATION DE L'ENFANT
-                    fork_and_run2(child_trt,pipefdIn,pipefdOut);
+                    void *newsockfd_ptr = (void *)&newsockfd;
+                    fork_and_run3(child_trt,pipefdIn,pipefdOut, newsockfd_ptr);
  
                     //Soit on a trouvé 3 personnes en 30sec soit on arrete de rechercher des joueurs après 30 et on doit vérifier qu'on a au moins 2 joueurs.
                     if(nbPlayers == MAX_PLAYERS) {
                         alarm(0); //On a atteint le max de joueurs pour une partie 
+                        end = 1;
                     }
                 } else {
                     msg.code = INSCRIPTION_KO;
@@ -223,7 +239,7 @@ int main(int argc, char const *argv[]) {
     if(nbPlayers < MIN_PLAYERS) {
         printf("PARTIE ANNULEE ... PAS AU MOINS 2 JOUEURS");
         msg.code  = CANCEL_GAME;
-        char* message = "Partie annulée : joueurs insuffisants";
+        message = "Partie annulée : joueurs insuffisants";
         strncpy(msg.messageText,message,strlen(message));
         //ON ECRIT UN MESSAGE POUR LE SERVEUR FILS
         swrite(pipefdOut[1], &msg, sizeof(StructMessage));
@@ -240,7 +256,30 @@ int main(int argc, char const *argv[]) {
     //*********************************************************************************//
     //*******************************COMMENCER PARTIE************************************//
     //*********************************************************************************//
+    printf ("La jeu va commencer\n");
+    msg.code = START_GAME;
+    message = "Le jeu va commencer";
+
+    swrite(pipefdOut[1],&msg,sizeof(msg));
     int* tilesbag = createTiles();
+    int cptPlacedTiles = 0;
+    int tileNumber;
+    for (int i=0 ; i<NUMBER_OF_PLAYS;i++){
+            //ENVOYER TUILE AU FILS
+            tileNumber = digTile(tilesbag,&nextTile);
+            msg.code = NUMERO_TUILE;
+            msg.tuile = tileNumber;
+            swrite(pipefdOut[1],&msg,sizeof(StructMessage));
+
+        while(cptPlacedTiles != nbPlayers){
+            sread(pipefdIn[0],&msg,sizeof(StructMessage));
+            if(msg.code == PLACEMENT_TERMINE){
+                cptPlacedTiles++;
+            } 
+            //si ne fonctionne pas changer le code de message.
+        } 
+    }
+    printf("Les 20 tours sont terminés !");
     free(tilesbag);
     free(tabPlayers);
 }
