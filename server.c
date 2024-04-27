@@ -112,11 +112,11 @@ void child_trt(void *pipefdIn, void *pipefdOut, void *socket) {
  
     //ON ATTEND UN MESSAGE DE LA PART DU PERE : PARTIE ANNULEE OU START GAME 
     StructMessage msg;
-    sread(pipefdI[0],&msg,sizeof(StructMessage));
-    printf("Message reçu du père : %s",msg.messageText);
+    sread(pipefdI[0],&msg,sizeof(msg));
+    printf("Code du message recu du pere : %d\n ",msg.code);
  
     //ENVOYER LE MESSAGE DU PERE AU CLIENT
-    swrite(*newsocket, &msg, sizeof(StructMessage));
+    swrite(*newsocket, &msg, sizeof(msg));
 
     //RECEVOIR NUMERO TUILE PERE 20 FOIS
     for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
@@ -157,7 +157,6 @@ int main(int argc, char const *argv[]) {
     //VARIABLES
     end = 0;
     int nbPlayers = 0;
-    char* message ;
     // int indexPiocherTuile = 0;
     int newsockfd;
     StructMessage msg;
@@ -170,16 +169,7 @@ int main(int argc, char const *argv[]) {
  
     //ALARMES
     ssigaction (SIGALRM, endServerHandler);
-    //CREATION DU PIPE POUR COMMUNICATION AVEC FILS
-    //Après le fork on aura deux pipes un pour le fils et un pour le pere
-    int pipefdIn[2];
-    int pipefdOut[2];
-    spipe(pipefdIn);
-    spipe(pipefdOut);
- 
-    
- 
-    
+
  
     //*********************************************************************************//
     //*******************************INSCRIPTIONS**************************************//
@@ -207,9 +197,8 @@ int main(int argc, char const *argv[]) {
                     newPlayer.sockfd = newsockfd;
  
                     addPlayerToTable(tabPlayers , newPlayer, &nbPlayers);
-                    //CREATION DE L'ENFANT
-                    fork_and_run3(child_trt,pipefdIn,pipefdOut, &newsockfd);
- 
+
+                    //CREATION DE L'ENFANT 
                     //Soit on a trouvé 3 personnes en 30sec soit on arrete de rechercher des joueurs après 30 et on doit vérifier qu'on a au moins 2 joueurs.
                     if(nbPlayers == MAX_PLAYERS) {
                         alarm(0); //On a atteint le max de joueurs pour une partie 
@@ -225,27 +214,38 @@ int main(int argc, char const *argv[]) {
     }
  
     printf("FIN DES INSCRIPTIONS\n");
- 
-    //*********************************************************************************//
-    //*******************************ANNULER PARTIE************************************//
-    //*********************************************************************************//
- 
+
+    //CREATION DU PIPE POUR COMMUNICATION AVEC FILS
+    //Après le fork on aura deux pipes pour chaque fils et deux pour le pere
+    int pipefdIn[2];
+    int pipefdOut[2];
+    spipe(pipefdIn);
+    spipe(pipefdOut);
+
+    for(int i=0 ; i<nbPlayers; i++){
+        fork_and_run3(child_trt,pipefdIn,pipefdOut, &tabPlayers[i].sockfd);
+    } 
+     
     //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
     sclose(pipefdOut[0]);
     //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
     sclose(pipefdIn[1]);
+
+    //*********************************************************************************//
+    //*******************************ANNULER PARTIE************************************//
+    //*********************************************************************************//
  
     if(nbPlayers < MIN_PLAYERS) {
-        printf("PARTIE ANNULEE ... PAS AU MOINS 2 JOUEURS");
+        printf("PARTIE ANNULEE ... PAS AU MOINS 2 JOUEUR\n");
         msg.code  = CANCEL_GAME;
-        message = "Partie annulée : joueurs insuffisants";
-        strncpy(msg.messageText,message,strlen(message));
+        char* message = "Partie annulée : joueurs insuffisant\n"; 
+        strcpy(msg.messageText,message);
         //ON ECRIT UN MESSAGE POUR LE SERVEUR FILS
-        swrite(pipefdOut[1], &msg, sizeof(StructMessage));
+        swrite(pipefdOut[1], &msg, sizeof(msg));
  
         //On recoit un message du serveur fils 
-        sread(pipefdIn[0], &msg, sizeof(message));
-        printf("Message de mon fils %s:",message);
+        sread(pipefdIn[0], &msg, sizeof(msg));
+        printf("Message de mon fils %s\n:",msg.messageText);
         // ON CLOTURE LES DEUX PIPES
         sclose(pipefdOut[1]);
         sclose(pipefdIn[0]);
@@ -257,9 +257,9 @@ int main(int argc, char const *argv[]) {
     //*********************************************************************************//
     printf ("La jeu va commencer\n");
     msg.code = START_GAME;
-    message = "Le jeu va commencer";
+    printf ("Message que le père encode : %s; Code du message : %d\n",msg.messageText,msg.code);
 
-    swrite(pipefdOut[1],&msg,sizeof(msg));
+    swrite(pipefdOut[1],&msg,sizeof(StructMessage));
     int* tilesbag = createTiles();
     int cptPlacedTiles = 0;
     int tileNumber;
@@ -278,7 +278,7 @@ int main(int argc, char const *argv[]) {
             //si ne fonctionne pas changer le code de message.
         } 
     }
-    printf("Les 20 tours sont terminés !");
+    printf("Les 20 tours sont terminés!\n ");
     free(tilesbag);
     free(tabPlayers);
 }
