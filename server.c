@@ -208,8 +208,7 @@ int main(int argc, char const *argv[]) {
  
                     addPlayerToTable(tabPlayers , newPlayer, &nbPlayers);
                     //CREATION DE L'ENFANT
-                    void *newsockfd_ptr = (void *)&newsockfd;
-                    fork_and_run3(child_trt,pipefdIn,pipefdOut, newsockfd_ptr);
+                    fork_and_run3(child_trt,pipefdIn,pipefdOut, &newsockfd);
  
                     //Soit on a trouvé 3 personnes en 30sec soit on arrete de rechercher des joueurs après 30 et on doit vérifier qu'on a au moins 2 joueurs.
                     if(nbPlayers == MAX_PLAYERS) {
@@ -245,7 +244,7 @@ int main(int argc, char const *argv[]) {
         swrite(pipefdOut[1], &msg, sizeof(StructMessage));
  
         //On recoit un message du serveur fils 
-        sread(pipefdIn[0], &msg, strlen(message));
+        sread(pipefdIn[0], &msg, sizeof(message));
         printf("Message de mon fils %s:",message);
         // ON CLOTURE LES DEUX PIPES
         sclose(pipefdOut[1]);
