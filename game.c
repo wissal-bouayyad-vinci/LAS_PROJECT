@@ -48,66 +48,81 @@ bool choosePlacement(int tileNumber, int chosenPlace,int* grille){
 int scoreCalculation(int* grille){
     int points = 0;
     int sequence_length =1;
-    int BJKER = 0;        
-
+    int BJKER = 0;
+    int AFJKER = 0;        
+    int index = 0;
+   
     for (int i = 1; i < GRILLE_SIZE; ++i){
-
-        // Bjker !=0 veut dire que l'on a rencontrer un joker et qu'on a retenu la veleur avant celui celui ci
-        if (BJKER!=0){
-            // on compare le après joker avec le avant joker 
-            // si c'est plus grand alors on est toujour dans une seule et même serie
-            if (grille[i]>=BJKER){
-                //donc on rajoute +1 a la longeur et oncontinue
-                sequence_length++;
-            }else{
-                // on a deux serie un avant et une apres 
-                // on calcul le before et le after longeur des serie 
-                // on veut que la plus longue recupère le joker en tant que nombre +1 pour la longueur
-                int before=1;
-                int after=1;
-                for(int j=(i-1) ; j>0;j--){
-                    if(grille[j] >= grille[j-1]){
-                        before++;
-                    }else{
-                        break;
-                    }
-                }
-                for (int k = (i+1); k < GRILLE_SIZE; ++k){
-                    if(grille[i+1] >=grille[i] ){
-                        after++;
-                    } else{
-                        break;
-                    }
-                }
-
-                // si before avant alors on rajoute le +1 dan sla serie avant le joker et sinon dans la longeur après
-                if(before>=after){
-                    sequence_length++;
-                }else{
-                    points+=TablePoints[sequence_length];
-                    sequence_length=1;
-                }
-            }
-            // on remet a joker non rencontrer
-            BJKER=0;
-        }
-
-        // si i > i-1 alors 
+        if (grille[i]==31)
+        {
+            index = i;
+            BJKER= grille[i-1];
+            AFJKER = grille[i+1];
+        }        
+        // si i > i-1 alors on est dans un sequence : 
         if (grille[i]>=grille[i-1] ){
-            // est ce un joker ?
-             if(grille[i]==31){
-                 // c'est un joker 
-                 BJKER = grille[i-1];
-             }
-        
+
+            // Bjker !=0 veut dire que l'on a rencontrer un joker et qu'on a retenu la veleur avant et après celui celui ci
+            if (BJKER!=0){
+                // si apres joker >= avant joker alors on fais toujour partie d'une seul sequance
+                if (AFJKER>=BJKER){
+                    sequence_length++;
+                }
+                    // sinon on a deux serie un avant et une apres 
+                else  {
+                    // on calcul le before et le after longeur des serie pour comprarer
+                    // on veut que la plus longue recupère le joker en tant que nombre +1 pour la longueur
+                    int before=1;
+                    int after=1;
+                    for (int j = index-1; j > 0; j--) {
+                        if (grille[j] >= grille[j - 1]) {
+                            before++;
+                        } else {
+                            break;
+                        }
+                    }
+                    for (int k = index+1; k < GRILLE_SIZE; ++k) {
+                       
+                        if (grille[k] <= grille[k+1]) {
+                            after++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // si before avant alors on rajoute le +1 pour le joker et sinon on l efera dans la longeur après
+                    if(before >= after){
+                        before++;
+                        points += TablePoints[before];
+                        sequence_length=1;
+                
+                    }else{
+                        points += TablePoints[before];
+                        sequence_length=1;
+
+                    }
+
+                    // re initialiser les attributs
+                    BJKER=0;
+                    AFJKER=0;
+                    index=0;
+                    before=1;
+                    after=1;
+
+                }
+       
+            } else {
+                sequence_length++;
+            }
+
         }else{
-            points+=TablePoints[sequence_length];
+            // on a fini la sequance donc on rentre les points et on recommence 
+            points+=TablePoints[sequence_length-1];
             sequence_length=1;
         }
     }
-
-    // gestion su dernier serie 
-    points+=TablePoints[sequence_length];
+    // pour rajouter les points de la toute dernière sequance.
+    points+=TablePoints[sequence_length-1];
     return points;
 }
 

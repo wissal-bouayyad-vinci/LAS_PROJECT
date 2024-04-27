@@ -102,8 +102,7 @@ int main(int argc, char const *argv[])
     /*wait to know if the game START oR CANCEL*/
     sread(sockfd,&message,sizeof(message));
 
-    if (message.code == START_GAME)
-    {
+    if (message.code == START_GAME){
         printf("START GAME\n");
         // pseudoPlayer code : 
         int* grille =  initGrille();
@@ -161,10 +160,9 @@ int main(int argc, char const *argv[])
 
 
 
-    }else{
+    }else if(message.code == CANCEL_GAME){
         printf("CANCEL GAME\n");
         sclose(sockfd);
-        free(grille);
     }
 
     return 0;
