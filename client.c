@@ -69,7 +69,7 @@ int main(int argc, char const *argv[])
     int cptGame=0;
     StructMessage message;
 
-    // recup
+    // recup 
     printf("Bienvenue a vous. Inscrivez vous pour commencer la partie.\n");
     printf("Pour cela votre pseudo : \n");
     ret = sread(0,pseudoPlayer,MAX_PSEUDO);
@@ -98,9 +98,13 @@ int main(int argc, char const *argv[])
             break;
     }
 
-
     /*wait to know if the game START oR CANCEL*/
-    sread(sockfd,&message,sizeof(message));
+    if(sread(sockfd,&message,sizeof(message))){
+        printf("message code 1 : %d\n ",message.code);
+        printf("message 2: %s \n ", message.messageText);
+    }else{
+        printf("mais je read rien en fait");
+    } 
 
     if (message.code == START_GAME){
         printf("START GAME\n");

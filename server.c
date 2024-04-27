@@ -113,13 +113,14 @@ void child_trt(void *pipefdIn, void *pipefdOut, void *socket) {
     //ON ATTEND UN MESSAGE DE LA PART DU PERE : PARTIE ANNULEE OU START GAME 
     StructMessage msg;
     sread(pipefdI[0],&msg,sizeof(StructMessage));
-    printf("Message reçu du père : %s",msg.messageText);
- 
+    printf("1. Message reçu du père : %s \n ",msg.messageText);
     //ENVOYER LE MESSAGE DU PERE AU CLIENT
     swrite(*newsocket, &msg, sizeof(StructMessage));
 
     //RECEVOIR NUMERO TUILE PERE 20 FOIS
     for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
+        printf("Message reçu du père tuile tuile: %d \n ",msg.tuile);
+
         while(msg.code != NUMERO_TUILE){
             sread(pipefdI[0],&msg,sizeof(msg));
         }
@@ -128,6 +129,7 @@ void child_trt(void *pipefdIn, void *pipefdOut, void *socket) {
             sread(*newsocket,&msg,sizeof(msg));
         }
         swrite(pipefdO[1], &msg,sizeof(msg));
+        printf("2. messase code %d\n ", msg.code);
      
     } 
  
@@ -208,8 +210,7 @@ int main(int argc, char const *argv[]) {
  
                     addPlayerToTable(tabPlayers , newPlayer, &nbPlayers);
                     //CREATION DE L'ENFANT
-                    void *newsockfd_ptr = (void *)&newsockfd;
-                    fork_and_run3(child_trt,pipefdIn,pipefdOut, newsockfd_ptr);
+                    fork_and_run3(child_trt,pipefdIn,pipefdOut, &newsockfd);
  
                     //Soit on a trouvé 3 personnes en 30sec soit on arrete de rechercher des joueurs après 30 et on doit vérifier qu'on a au moins 2 joueurs.
                     if(nbPlayers == MAX_PLAYERS) {
@@ -239,7 +240,7 @@ int main(int argc, char const *argv[]) {
     if(nbPlayers < MIN_PLAYERS) {
         printf("PARTIE ANNULEE ... PAS AU MOINS 2 JOUEURS");
         msg.code  = CANCEL_GAME;
-        message = "Partie annulée : joueurs insuffisants";
+        message = "Partie annulée : joueurs insuffisants\n ";
         strncpy(msg.messageText,message,strlen(message));
         //ON ECRIT UN MESSAGE POUR LE SERVEUR FILS
         swrite(pipefdOut[1], &msg, sizeof(StructMessage));
@@ -258,7 +259,7 @@ int main(int argc, char const *argv[]) {
     //*********************************************************************************//
     printf ("La jeu va commencer\n");
     msg.code = START_GAME;
-    message = "Le jeu va commencer";
+    message = "Le jeu va commencer\n ";
 
     swrite(pipefdOut[1],&msg,sizeof(msg));
     int* tilesbag = createTiles();
@@ -270,7 +271,7 @@ int main(int argc, char const *argv[]) {
             msg.code = NUMERO_TUILE;
             msg.tuile = tileNumber;
             swrite(pipefdOut[1],&msg,sizeof(StructMessage));
-
+            
         while(cptPlacedTiles != nbPlayers){
             sread(pipefdIn[0],&msg,sizeof(StructMessage));
             if(msg.code == PLACEMENT_TERMINE){
