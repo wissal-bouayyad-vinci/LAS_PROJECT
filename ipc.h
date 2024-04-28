@@ -12,8 +12,12 @@
  * POST: on success, you get the shared memory pointer.
  * RES:  return a pointer to the shared memory.
  */
-Structplayer* initSharedMemory(int nbrPlayers);
+int initSharedMemory(int nbrPlayers);
 
+/**
+ * 
+ */ 
+Structplayer* attacheSHM(int shmID);
 
 /**
  * PRE:   
