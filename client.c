@@ -88,11 +88,13 @@ int main(int argc, char const *argv[])
             break;
     }
  
-    /*wait to know if the game START oR CANCEL*/
-    while(message.code != START_GAME && message.code != CANCEL_GAME ){
-        sread(sockfd,&message,sizeof(message));
-        printf("Je suis dans ma boucle while\n");
-    } 
+   /*wait to know if the game START oR CANCEL*/
+    if(sread(sockfd,&message,sizeof(message))){
+        printf("message code 1 : %d\n ",message.code);
+        printf("message 2: %s \n ", message.messageText);
+    }else{
+        printf("mais je read rien en fait");
+    }
     printf("Message recu du serveur fils : %s ; Le code reçcu du serveur fils: %d\n",message.messageText,message.code );
 
     if (message.code == START_GAME){
