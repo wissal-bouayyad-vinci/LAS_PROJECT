@@ -275,6 +275,7 @@ int main(int argc, char const *argv[]) {
     int* tilesbag = createTiles();
     int cptPlacedTiles = 0;
     int tileNumber;
+    int cptPlacement =0;
     for (int i=0 ; i<NUMBER_OF_PLAYS;i++){
         //ENVOYER TUILE AU FILS
         tileNumber = digTile(tilesbag,&nextTile);
@@ -285,21 +286,23 @@ int main(int argc, char const *argv[]) {
             swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(StructMessage));
         } 
 
+
         for(int i=0 ; i<nbPlayers ; i++){
             sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
-            printf("oueoue habitant de bagdad ");
+            printf("fils envoie %d placement terminer \n ",cptPlacement);
             if(msg.code == PLACEMENT_TERMINE){
                 cptPlacedTiles++;
+                cptPlacement++;
             } 
         }
 
 
-        if(cptPlacedTiles == nbPlayers){
-            printf("ok de joueur a pas placer sa tuilse\n");
-        }
-
     }
     printf("Les 20 tours sont terminés!\n ");
+    msg.code= END_TOUR;
+    for (int i = 0; i < nbPlayers; ++i){
+        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
+    }
     free(tilesbag);
     free(tabPlayers);
 

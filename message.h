@@ -11,6 +11,7 @@
 #define NUMERO_TUILE 15
 #define PLACEMENT_TERMINE 16
 #define RANKING 17
+#define END_TOUR 18
 
 /* struct message used between server and client */
 typedef struct

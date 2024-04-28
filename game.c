@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "game.h"
@@ -21,9 +22,9 @@ int* initGrille(){
     return grille;
 }
 
-bool choosePlacement(int tileNumber, int* chosenPlace,int* grille){
+bool choosePlacement(int tileNumber, int chosenPlace,int* grille){
 
-    int placeNumber = (*chosenPlace)-1;
+    int placeNumber = chosenPlace-1;
 
     if (placeNumber < 0 || placeNumber >= GRILLE_SIZE ) {
         printf("Veuillez choisir une place viable.\n");
@@ -33,7 +34,7 @@ bool choosePlacement(int tileNumber, int* chosenPlace,int* grille){
     while (grille[placeNumber] != -1){
         placeNumber++;
 
-        if (placeNumber == (GRILLE_SIZE-1)) {
+        if (placeNumber == (GRILLE_SIZE)) {
             placeNumber=0;
         }
     }

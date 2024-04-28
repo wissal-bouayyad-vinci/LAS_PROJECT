@@ -118,11 +118,16 @@ int main(int argc, char const *argv[])
 
                 int chosenPlacement;
                 // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
-                scanf("%d", &chosenPlacement);
+                char input[256];
+                fgets(input, sizeof(input), stdin);
+                sscanf(input, "%d", &chosenPlacement);
+
                 // printf("lilil : %d \n",chosenPlacement);
-                while(!choosePlacement(tileNumber, &chosenPlacement, grille)){    
+                while(!choosePlacement(tileNumber, chosenPlacement, grille)){    
                     // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
-                    scanf("%d", &chosenPlacement);
+                    char input[256];
+                    fgets(input, sizeof(input), stdin);
+                    sscanf(input, "%d", &chosenPlacement);
                     // printf("chosenPlacement : %d\n", chosenPlacement);
                     printf("AAAA\n");
                 }
@@ -141,16 +146,17 @@ int main(int argc, char const *argv[])
             }else{
                 printf("Réponse Serveur: non prevue %d.\n", message.code);
             }
-        }                
+        }
 
+        
         // on a fini le jeux 
-            int scoreFinal = scoreCalculation(grille);
-            Structplayer player ;
-            strcpy(player.pseudo,pseudoPlayer);
-            player.score=scoreFinal;
-            ret = swrite(sockfd,&player,sizeof(player));
+        int scoreFinal = scoreCalculation(grille);
+        Structplayer player ;
+        strcpy(player.pseudo,pseudoPlayer);
+        player.score=scoreFinal;
+        ret = swrite(sockfd,&player,sizeof(player));
             
-            while(sread(sockfd,&message,sizeof(message))){
+        while(sread(sockfd,&message,sizeof(message))){
 
                 if ((message.code==RANKING)){
                     struct Structplayer* players;
