@@ -148,13 +148,15 @@ int main(int argc, char const *argv[])
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
+
+        // attend message ranking
         sread(sockfd,&message,sizeof(message));
 
             if ((message.code==RANKING)){
                     struct Structplayer* players;
                     int size;   
-                    sread(sockfd,&players,sizeof(players));
                     sread(sockfd,&size,sizeof(size));
+                    sread(sockfd,&players,sizeof(players));
                     printRanking(players,size);
                     free(players);
 

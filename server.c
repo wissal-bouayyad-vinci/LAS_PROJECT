@@ -129,27 +129,30 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     //RECEVOIR LE SCORE DU CLIENT
     int score;
     sread(*newsocket, &score, sizeof(int));
-    printf("Mon score chez le fils vaut : %d",score);
+    printf("Mon score chez le fils vaut : %d\n",score);
     //ENVOYER LE SCORE AU PERE
     swrite(pipefdO[1],&score, sizeof(int));
 
     //ENVOYER MESSAGE RANKING
-    msg.code = RANKING;
-    char* message = "Voici le ranking de tous les joueur\n\0";
-    strcpy(msg.messageText,message);
+    sread(pipefdI[0],&msg,sizeof(msg));
     swrite(*newsocket,&msg,sizeof(msg));
+    printf("ranking server\n");
+
     //Envoyer le nombre de joueurs
     int nbrJoueurs;
     sread(pipefdI[0],&nbrJoueurs,sizeof(int));
     swrite(*newsocket,&nbrJoueurs,sizeof(int));
+    printf("nombre joueur chils_trt : %d\n", nbrJoueurs);
 
     //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
     int semID = getSemaphore();
     sem_down0(semID);
-    Structplayer* playersRankingSHM = getsharedMemory();
+    printf("semId child_trt : %d \n",semID);
+    Structplayer* playersRankingSHM = getsharedMemory(nbrJoueurs);
     Structplayer* playersRanking;
-    for(int i=0 ; i<nbPlayers ; i++){
-        playersRankingSHM[i] = playersRanking[i];  
+    for(int i=0 ; i<nbrJoueurs ; i++){
+        playersRanking[i] = playersRankingSHM[i];
+        printf("voici les joueur de ma table ranking %s\n",playersRanking[i].pseudo );  
     } 
 
     swrite(*newsocket, &playersRanking, sizeof(Structplayer));
@@ -325,10 +328,10 @@ int main(int argc, char const *argv[]) {
 
     }
     printf("Les 20 tours sont terminés!\n ");
-    msg.code= END_TOUR;
-    for (int i = 0; i < nbPlayers; ++i){
-        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
-    }
+    
+
+
+    
 
     //ON ENTRE DANS LA ZONE CRITIQUE
     int scorePersonnel;
@@ -345,7 +348,15 @@ int main(int argc, char const *argv[]) {
     //Mettre la table trié dans l'ipc
     for(int i=0 ; i<nbPlayers; i++){
         tableJoueursIPC[i] = tabPlayers[i];
-    } 
+    }
+
+    msg.code= RANKING;
+    for (int i = 0; i < nbPlayers; ++i){
+        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
+        swrite(pipes[i].pipefdWrite[1],&nbPlayers,sizeof(int));
+        printf("nbPlayers pere : %d",nbPlayers);
+    }
+
     //ON SORT DE LA ZONE CRITIQUE
     sem_up0 (semID); 
     

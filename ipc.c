@@ -18,8 +18,8 @@ Structplayer* attacheSHM(int shmID){
 
 
 
-Structplayer* getsharedMemory(){
-    int shm_id = sshmget(SHM_KEY, sizeof(Structplayer), 0);
+Structplayer* getsharedMemory(int nbPlayers){
+    int shm_id = sshmget(SHM_KEY, nbPlayers*sizeof(Structplayer), 0);
     Structplayer* z = sshmat(shm_id);
 
     return z;

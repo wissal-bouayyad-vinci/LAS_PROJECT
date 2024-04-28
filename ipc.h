@@ -24,7 +24,7 @@ Structplayer* attacheSHM(int shmID);
  * POST: on success, you get the shared memory pointer.
  * RES:  return a pointer to the shared memory.
  */
-Structplayer* getsharedMemory();
+Structplayer* getsharedMemory(int nbrPlayers);
 
 /**
  * PRE:
