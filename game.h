@@ -17,7 +17,7 @@
  *       requested position.
  * RES:  once the tile is placed true will be returned
  */
-bool choosePlacement(int tileNumber, int chosenPlace,int* grille);
+bool choosePlacement(int tileNumber, int *chosenPlace,int* grille);
 
 /**
  * PRE: grille is the final grille of the player

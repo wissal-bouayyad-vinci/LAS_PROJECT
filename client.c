@@ -15,23 +15,23 @@
 #include "config.h"
 #include "client.h"
  
-void printGrille(int* grille, int size){
+void printGrille(int* grille){
     printf("GRILLE DE JEUX\n");
     printf("%2s ", "");
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < GRILLE_SIZE; ++i)
     {
         printf("%3d ", (i+1));
     }
     printf("\n");
     printf("%2s ", "");
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < GRILLE_SIZE; ++i)
     {
         if (grille[i]==-1)
         {
-            printf("-");
+            printf(" - ");
         }else if (grille[i]==31)
         {
-            printf("Jo");
+            printf(" Jo ");
         }else{
             printf("%3d ",grille[i]);
         }
@@ -54,7 +54,6 @@ int main(int argc, char const *argv[])
     int sockfd;
     int ret;
     int tileNumber;
-    int chosenPlacement;
     int cptGame=0;
     StructMessage message;
 
@@ -87,14 +86,15 @@ int main(int argc, char const *argv[])
             printf("Réponse Serveur: non prevue %d.\n", message.code);
             break;
     }
-
-    /*wait to know if the game START oR CANCEL*/
+ 
+   /*wait to know if the game START oR CANCEL*/
     if(sread(sockfd,&message,sizeof(message))){
         printf("message code 1 : %d\n ",message.code);
         printf("message 2: %s \n ", message.messageText);
     }else{
         printf("mais je read rien en fait");
-    } 
+    }
+    printf("Message recu du serveur fils : %s ; Le code reçcu du serveur fils: %d\n",message.messageText,message.code );
 
     if (message.code == START_GAME){
         printf("START GAME\n");
@@ -102,20 +102,32 @@ int main(int argc, char const *argv[])
         // pseudoPlayer code : 
         int* grille =  initGrille();
 
-       while(sread(sockfd,&message,sizeof(message))){ 
-            if (message.code==NUMERO_TUILE){
+        for (int i = 0; i < MAX_NUMBER_TURN; i++){ 
+            sread(sockfd,&message,sizeof(message));
+
+            if(message.code==CANCEL_GAME){
+                printf("CANCEL_GAME\n");
+                sclose(sockfd);
+            } 
+            else if (message.code==NUMERO_TUILE){
                 tileNumber = message.tuile;
-                do {
-                    printf("Veuillez choisir un emplacement : \n");
-                    printGrille(grille, GRILLE_SIZE);
-                    sread(sockfd, &chosenPlacement, sizeof(chosenPlacement));
-                } while (!choosePlacement(tileNumber, chosenPlacement, grille));
+                printf("Veuillez choisir un emplacement :  pour la tuile %d \n", tileNumber);
+                printf("tileNumber : %d\n", tileNumber);
+                printGrille(grille);
+
+                int chosenPlacement;
+                read(STDIN_FILENO, &chosenPlacement, sizeof(int));
+                printf("lilil : %d \n",chosenPlacement);
+                while(!choosePlacement(tileNumber, &chosenPlacement, grille)){    
+                    read(STDIN_FILENO, &chosenPlacement, sizeof(int));
+                    printf("chosenPlacement : %d\n", chosenPlacement);
+                }
 
                 // if true
                 message.code = PLACEMENT_TERMINE;
                 ret = swrite(sockfd,&message,sizeof(message));
                 printf("Voici vos placement : \n");
-                printGrille(grille,GRILLE_SIZE);
+                printGrille(grille);
                 cptGame++;
 
             }else{
@@ -130,7 +142,7 @@ int main(int argc, char const *argv[])
             strcpy(player.pseudo,pseudoPlayer);
             player.score=scoreFinal;
             ret = swrite(sockfd,&player,sizeof(player));
- 
+            
             while(sread(sockfd,&message,sizeof(message))){
 
                 if ((message.code==RANKING)){

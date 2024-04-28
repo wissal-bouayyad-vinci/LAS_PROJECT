@@ -7,7 +7,6 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <stdbool.h>
-#include "config.h"
 #include "message.h"
 #include "utils_v1.h"
 #include "ipc.h"
@@ -93,6 +92,7 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
     strncpy(tableauDesJoueurs[*nbPlayers].pseudo, newPlayer.pseudo,strlen(newPlayer.pseudo));
     tableauDesJoueurs[*nbPlayers].pseudo[MAX_PSEUDO -1] = '\0';
     tableauDesJoueurs[*nbPlayers].score = 0;
+    tableauDesJoueurs[*nbPlayers].sockfd = newPlayer.sockfd;  
     (*nbPlayers)++;
 }
  
@@ -117,21 +117,19 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
  
     //ENVOYER LE MESSAGE DU PERE AU CLIENT
     swrite(*newsocket, &msg, sizeof(msg));
-
-    //RECEVOIR NUMERO TUILE PERE 20 FOIS
-    for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
-        printf("Message reçu du père tuile tuile: %d \n ",msg.tuile);
-
-        while(msg.code != NUMERO_TUILE){
+    printf("Code du message recu du pere : %d\n ",msg.code);
+    if(msg.code == START_GAME){ 
+        //RECEVOIR NUMERO TUILE PERE 20 FOIS
+        for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
             sread(pipefdI[0],&msg,sizeof(msg));
-        }
-        swrite(*newsocket,&msg,sizeof(msg));
-        while(msg.code != PLACEMENT_TERMINE){
+            printf("numero tuile : %d \n",msg.tuile);
+            swrite(*newsocket,&msg,sizeof(msg));
             sread(*newsocket,&msg,sizeof(msg));
-        }
-        swrite(pipefdO[1], &msg,sizeof(msg));
-        printf("2. messase code %d\n ", msg.code);
-     
+            if(msg.code!=PLACEMENT_TERMINE){
+                printf("message non attendu : %d \n",msg.code);
+            }    
+            swrite(pipefdO[1], &msg,sizeof(msg));
+        } 
     } 
  
     //FERMER LA CONNECTION AVEC LE CLIENT
@@ -154,7 +152,7 @@ void endServerHandler (int sig) {
 int main(int argc, char const *argv[]) {
  
     //INITIALISER LE SOCKET SERVER 
-    int sockfd = initSocketServer(SERVER_PORT);
+    int sockfd = initSocketServer();
     printf("Le serveur tourne\n");
  
     //VARIABLES
@@ -253,10 +251,12 @@ int main(int argc, char const *argv[]) {
     if(nbPlayers < MIN_PLAYERS) {
         printf("PARTIE ANNULEE ... PAS AU MOINS 2 JOUEUR\n");
         msg.code  = CANCEL_GAME;
-        char* message = "Partie annulée : joueurs insuffisant\n"; 
-        strcpy(msg.messageText,message);
+        char* message = "Partie annulée\n";
+        strcpy(msg.messageText, message);
         //ON ECRIT UN MESSAGE POUR TOUS LES SERVEURS FILS
-        swrite(pipes[1].pipefdWrite[1] , &msg, sizeof(msg)); 
+        for(int i=0 ; i<nbPlayers ; i++){
+            swrite(pipes[0].pipefdWrite[1] , &msg, sizeof(StructMessage));
+        } 
     
     } else {
  
@@ -281,16 +281,20 @@ int main(int argc, char const *argv[]) {
         msg.tuile = tileNumber;
 
         for(int i=0 ; i<nbPlayers ; i++){
-            swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(msg));
+            swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(StructMessage));
         } 
 
-        while(cptPlacedTiles != nbPlayers){
-            for(int i=0 ; i<nbPlayers ; i++){
-                sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
-                if(msg.code == PLACEMENT_TERMINE){
-                    cptPlacedTiles++;
-                } 
+        for(int i=0 ; i<nbPlayers ; i++){
+            sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
+            printf("oueoue habitant de bagdad ");
+            if(msg.code == PLACEMENT_TERMINE){
+                cptPlacedTiles++;
             } 
+        }
+
+
+        if(cptPlacedTiles == nbPlayers){
+            printf("ok de joueur a pas placer sa tuilse\n");
         }
 
     }

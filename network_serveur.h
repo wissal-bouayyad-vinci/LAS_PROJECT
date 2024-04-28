@@ -10,11 +10,11 @@
 #define MIN_PLAYERS 2
  
 /**
-* PRE:  serverPort: a valid port number
+* PRE:  /
 * POST: on success, binds a socket to 0.0.0.0:serverPort and listens to it ;
 *       on failure, displays error cause and quits the program
 * RES:  return socket file descriptor
 */
-int initSocketServer(int port);
+int initSocketServer();
  
 #endif

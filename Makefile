@@ -7,7 +7,7 @@ all: server client
 server: server.o utils_v1.o network_serveur.o ipc.o 
 	$(CC) $(CCFLAGS) -o server server.o utils_v1.o network_serveur.o ipc.o
 
-server.o: server.c server.h utils_v1.h config.h message.h ipc.h network_serveur.h player.h
+server.o: server.c server.h utils_v1.h message.h ipc.h network_serveur.h player.h
 	$(CC) $(CCFLAGS) -c server.c
 
 #CLIENT

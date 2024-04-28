@@ -9,10 +9,16 @@
 #include "config.h"
 
 
-int initSocketServer(int port)
+int initSocketServer()
 {
     int sockfd = ssocket();
-    sbind(port, sockfd);
+
+    // setsockopt -> to avoid Address Already in Use
+	// to do before bind !
+	int option = 1;
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int));
+    
+    sbind(SERVER_PORT, sockfd);
     slisten(sockfd, BACKLOG);
  
     return sockfd;
