@@ -152,13 +152,13 @@ int main(int argc, char const *argv[])
         // on a fini le jeux 
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
-        int nbPlayers;
         swrite(sockfd,&score,sizeof(int));
-        sread(sockfd, &nbPlayers, sizeof(int));
         sread(sockfd,&message,sizeof(message));
 
         if ((message.code==RANKING)){
              Structplayer* players;
+             int nbPlayers;
+             sread(sockfd, &nbPlayers, sizeof(int));
              sread(sockfd,&players,sizeof(players));
              printRanking(players,size);
              free(players);
