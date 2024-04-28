@@ -5,11 +5,15 @@
 
 
 
-Structplayer* initSharedMemory(int nbPlayers){
+int initSharedMemory(int nbPlayers){
     int shm_id = sshmget(SHM_KEY, nbPlayers*sizeof(Structplayer), IPC_CREAT | PERM);
-    Structplayer* z = sshmat(shm_id);
+    return shm_id;
+}
 
-    return z;
+
+Structplayer* attacheSHM(int shmID){
+    Structplayer* z = sshmat(shmID);
+    return z; 
 }
 
 

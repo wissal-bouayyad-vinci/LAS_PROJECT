@@ -137,7 +137,7 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     msg.code = RANKING;
     char* message = "Voici le ranking de tous les joueur\n\0";
     strcpy(msg.messageText,message);
-    swrite(pipefdO[1],&msg,sizeof(msg));
+    swrite(*newsocket,&msg,sizeof(msg));
     //Envoyer le nombre de joueurs
     int nbrJoueurs;
     sread(pipefdI[0],&nbrJoueurs,sizeof(int));
@@ -229,7 +229,8 @@ int main(int argc, char const *argv[]) {
     }
     
     //CREATION DE MEMOIRE PARTAGEE ET CREATION DE SEMAPHORE
-    Structplayer* tableJoueursIPC = initSharedMemory(nbPlayers);
+    int shmId = initSharedMemory(nbPlayers);
+    Structplayer* tableJoueursIPC = attacheSHM(shmId);
     int semID = initSemaphore();
 
     //CREATION DES PIPES POUR LA COMMUNCATION ENTRE PERE ET FILS
@@ -350,6 +351,7 @@ int main(int argc, char const *argv[]) {
         sclose(pipes[i].pipefdWrite[1]);
         sclose(pipes[i].pipefdRead[0]);
     } 
+    sshmdelete(shmId);
     //attendre fils ou pas? 
     exit(0);
 } 
