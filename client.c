@@ -28,10 +28,10 @@ void printGrille(int* grille){
     {
         if (grille[i]==-1)
         {
-            printf(" - ");
+            printf("%3s ", "-");
         }else if (grille[i]==31)
         {
-            printf(" Jo ");
+            printf("%3s ", "Jo");
         }else{
             printf("%3d ",grille[i]);
         }
@@ -154,20 +154,20 @@ int main(int argc, char const *argv[])
         int score=scoreFinal;
         ret = swrite(sockfd,&score,sizeof(int));
             
-        while(sread(sockfd,&message,sizeof(message))){
+        sread(sockfd,&message,sizeof(message));
 
-                if ((message.code==RANKING)){
-                    struct Structplayer* players;
-                    int size;   
-                    sread(sockfd,&players,sizeof(players));
-                    sread(sockfd,&size,sizeof(size));
-                    printRanking(players,size);
-                    free(players);
+            if ((message.code==RANKING)){
+                struct Structplayer* players;
+                int size;   
+                sread(sockfd,&players,sizeof(players));
+                sread(sockfd,&size,sizeof(size));
+                printRanking(players,size);
+                free(players);
 
-                }else{
-                    printf("Réponse Serveur: non prevue %d.\n", message.code);                
-                }
+            }else{
+                printf("Réponse Serveur: non prevue %d.\n", message.code);                
             }
+            
  
             //  end 
             printf("END GAME\n");
