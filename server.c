@@ -101,7 +101,7 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
 //*********************************************************************************//
  
 //CHILD_TREATMENT
-void child_trt(void *pipefdIn, void *pipefdOut, void *socket) {
+void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     int *pipefdO = pipefdOut;
     int *pipefdI = pipefdIn;
     int *newsocket = socket;
@@ -178,7 +178,7 @@ int main(int argc, char const *argv[]) {
     //*******************************INSCRIPTIONS**************************************//
     //*********************************************************************************//
  
-    alarm(TIME_INSCRIPTION);
+    alarm(15);
  
     while (!end) {
         //CLIENT TREATMENT
@@ -216,23 +216,35 @@ int main(int argc, char const *argv[]) {
         }
     }
  
+    typedef struct {
+        int pipefdRead[2];
+        int pipefdWrite[2]; 
+    }structPipe;
+
+    structPipe* pipes = malloc (nbPlayers*sizeof(structPipe));
+    if(!pipes){
+        perror("Error in allocation");
+        exit(1);
+    }   
     printf("FIN DES INSCRIPTIONS\n");
 
-    //CREATION DU PIPE POUR COMMUNICATION AVEC FILS
-    //Après le fork on aura deux pipes pour chaque fils et deux pour le pere
-    int pipefdIn[2];
-    int pipefdOut[2];
-    spipe(pipefdIn);
-    spipe(pipefdOut);
-
     for(int i=0 ; i<nbPlayers; i++){
-        fork_and_run3(child_trt,pipefdIn,pipefdOut, &tabPlayers[i].sockfd);
-    } 
-     
-    //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
-    sclose(pipefdOut[0]);
-    //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
-    sclose(pipefdIn[1]);
+        int pipefdI[2];
+        int pipefdO[2];  
+        spipe(pipefdI);
+        spipe(pipefdO);
+
+        pipes[i].pipefdRead[0]  = pipefdI[0] ;
+        pipes[i].pipefdRead[1]  = pipefdI[1] ;
+        pipes[i].pipefdWrite[0]  = pipefdO[0] ;
+        pipes[i].pipefdWrite[1]  = pipefdO[1] ; 
+        fork_and_run3(child_trt,pipes[i].pipefdRead, pipes[i].pipefdWrite , &tabPlayers[i].sockfd);
+    
+        //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
+        sclose(pipes[i].pipefdWrite[0]);
+        //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
+        sclose(pipes[i].pipefdRead[1]);    
+    }
 
     //*********************************************************************************//
     //*******************************ANNULER PARTIE************************************//
@@ -243,17 +255,10 @@ int main(int argc, char const *argv[]) {
         msg.code  = CANCEL_GAME;
         char* message = "Partie annulée : joueurs insuffisant\n"; 
         strcpy(msg.messageText,message);
-        //ON ECRIT UN MESSAGE POUR LE SERVEUR FILS
-        swrite(pipefdOut[1], &msg, sizeof(msg));
- 
-        //On recoit un message du serveur fils 
-        sread(pipefdIn[0], &msg, sizeof(msg));
-        printf("Message de mon fils %s\n:",msg.messageText);
-        // ON CLOTURE LES DEUX PIPES
-        sclose(pipefdOut[1]);
-        sclose(pipefdIn[0]);
- 
-    } else{
+        //ON ECRIT UN MESSAGE POUR TOUS LES SERVEURS FILS
+        swrite(pipes[1].pipefdWrite[1] , &msg, sizeof(msg)); 
+    
+    } else {
  
     //*********************************************************************************//
     //*******************************COMMENCER PARTIE************************************//
@@ -262,31 +267,46 @@ int main(int argc, char const *argv[]) {
     msg.code = START_GAME;
     printf ("Message que le père encode : %s; Code du message : %d\n",msg.messageText,msg.code);
 
-    swrite(pipefdOut[1],&msg,sizeof(StructMessage));
+    for(int i= 0 ; i<nbPlayers; i++){
+        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
+    } 
+
     int* tilesbag = createTiles();
     int cptPlacedTiles = 0;
     int tileNumber;
     for (int i=0 ; i<NUMBER_OF_PLAYS;i++){
-            //ENVOYER TUILE AU FILS
-            tileNumber = digTile(tilesbag,&nextTile);
-            msg.code = NUMERO_TUILE;
-            msg.tuile = tileNumber;
-            swrite(pipefdOut[1],&msg,sizeof(StructMessage));
-            
-        while(cptPlacedTiles != nbPlayers){
-            sread(pipefdIn[0],&msg,sizeof(StructMessage));
-            if(msg.code == PLACEMENT_TERMINE){
-                cptPlacedTiles++;
-            } 
-            //si ne fonctionne pas changer le code de message.
+        //ENVOYER TUILE AU FILS
+        tileNumber = digTile(tilesbag,&nextTile);
+        msg.code = NUMERO_TUILE;
+        msg.tuile = tileNumber;
+
+        for(int i=0 ; i<nbPlayers ; i++){
+            swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(msg));
         } 
+
+        while(cptPlacedTiles != nbPlayers){
+            for(int i=0 ; i<nbPlayers ; i++){
+                sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
+                if(msg.code == PLACEMENT_TERMINE){
+                    cptPlacedTiles++;
+                } 
+            } 
+        }
+
     }
     printf("Les 20 tours sont terminés!\n ");
     free(tilesbag);
     free(tabPlayers);
-}
+
+    }
+    // ON CLOTURE TOUTES LES PIPES
+    for(int i=0 ; i<nbPlayers ; i++){
+        sclose(pipes[i].pipefdWrite[1]);
+        sclose(pipes[i].pipefdRead[0]);
+    } 
     exit(0);
-}
+} 
+
 /*
     //SHARED MEMORY & SEMAPHORE
     int shmid = sshmget(SHM_KEY, nbrJoueurs * sizeof(int), 0);
