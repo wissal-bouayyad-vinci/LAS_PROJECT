@@ -102,7 +102,7 @@ int main(int argc, char const *argv[])
         // pseudoPlayer code : 
         int* grille =  initGrille();
 
-        for (int i = 0; i < MAX_NUMBER_TURN; i++){ 
+        for (int i = 1; i <=20; i++){ 
             sread(sockfd,&message,sizeof(message));
 
             if(message.code==CANCEL_GAME){
@@ -110,25 +110,33 @@ int main(int argc, char const *argv[])
                 sclose(sockfd);
             } 
             else if (message.code==NUMERO_TUILE){
+                printf("------------\n ");
                 tileNumber = message.tuile;
                 printf("Veuillez choisir un emplacement :  pour la tuile %d \n", tileNumber);
-                printf("tileNumber : %d\n", tileNumber);
+                // printf("tileNumber : %d\n", tileNumber);
                 printGrille(grille);
 
                 int chosenPlacement;
-                read(STDIN_FILENO, &chosenPlacement, sizeof(int));
-                printf("lilil : %d \n",chosenPlacement);
+                // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
+                scanf("%d", &chosenPlacement);
+                // printf("lilil : %d \n",chosenPlacement);
                 while(!choosePlacement(tileNumber, &chosenPlacement, grille)){    
-                    read(STDIN_FILENO, &chosenPlacement, sizeof(int));
-                    printf("chosenPlacement : %d\n", chosenPlacement);
+                    // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
+                    scanf("%d", &chosenPlacement);
+                    // printf("chosenPlacement : %d\n", chosenPlacement);
+                    printf("AAAA\n");
                 }
 
                 // if true
+                printf("AVANT PLACEMENT TERMINER\n "); 
+                printGrille(grille);
                 message.code = PLACEMENT_TERMINE;
                 ret = swrite(sockfd,&message,sizeof(message));
-                printf("Voici vos placement : \n");
-                printGrille(grille);
+                //printf("Voici vos placement : \n");
+                
                 cptGame++;
+
+                printf("numero de toru : %d\n ",i);
 
             }else{
                 printf("Réponse Serveur: non prevue %d.\n", message.code);
@@ -136,7 +144,6 @@ int main(int argc, char const *argv[])
         }                
 
         // on a fini le jeux 
-        if (cptGame==MAX_NUMBER_TURN){
             int scoreFinal = scoreCalculation(grille);
             Structplayer player ;
             strcpy(player.pseudo,pseudoPlayer);
@@ -162,7 +169,7 @@ int main(int argc, char const *argv[])
             printf("END GAME\n");
             sclose(sockfd);
             free(grille);
-        }
+        
     }else{
 
         printf("Jeu annulé : il manque des joueurs\n");

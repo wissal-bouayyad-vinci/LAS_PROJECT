@@ -129,6 +129,7 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
                 printf("message non attendu : %d \n",msg.code);
             }    
             swrite(pipefdO[1], &msg,sizeof(msg));
+            printf("%d placement terminer envoyer\n ", i);
         } 
     } 
  
