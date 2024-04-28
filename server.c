@@ -144,9 +144,11 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     swrite(*newsocket,&nbrJoueurs,sizeof(int));
 
     //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
+    int semID = getSemaphore();
+    sem_down0(semID);
     Structplayer* playersRanking = getsharedMemory();
     swrite(*newsocket, &playersRanking, sizeof(Structplayer));
-    
+    sem_up0(semID);
     //FERMER LA CONNECTION AVEC LE CLIENT
     sclose(*newsocket);
 }

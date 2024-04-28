@@ -54,7 +54,6 @@ int main(int argc, char const *argv[])
     int sockfd;
     int ret;
     int tileNumber;
-    int cptGame=0;
     StructMessage message;
 
     // recup 
@@ -138,10 +137,6 @@ int main(int argc, char const *argv[])
                 message.code = PLACEMENT_TERMINE;
                 ret = swrite(sockfd,&message,sizeof(message));
                 //printf("Voici vos placement : \n");
-                
-                cptGame++;
-
-                printf("numero de toru : %d\n ",i);
 
             }else{
                 printf("Réponse Serveur: non prevue %d.\n", message.code);
@@ -160,7 +155,7 @@ int main(int argc, char const *argv[])
              int nbPlayers;
              sread(sockfd, &nbPlayers, sizeof(int));
              sread(sockfd,&players,sizeof(players));
-             printRanking(players,size);
+             printRanking(players,nbPlayers);
              free(players);
          }else{
               printf("Réponse Serveur: non prevue %d.\n", message.code);                
