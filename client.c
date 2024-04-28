@@ -151,30 +151,26 @@ int main(int argc, char const *argv[])
         
         // on a fini le jeux 
         int scoreFinal = scoreCalculation(grille);
-        Structplayer player ;
-        strcpy(player.pseudo,pseudoPlayer);
-        player.score=scoreFinal;
-        ret = swrite(sockfd,&player,sizeof(player));
+        int score=scoreFinal;
+        swrite(sockfd,&score,sizeof(int));
+        sread(sockfd,&message,sizeof(message));
+
+        if ((message.code==RANKING)){
+             Structplayer* players;
+             int nbPlayers;
+             sread(sockfd, &nbPlayers, sizeof(int));
+             sread(sockfd,&players,sizeof(players));
+             printRanking(players,size);
+             free(players);
+         }else{
+              printf("Réponse Serveur: non prevue %d.\n", message.code);                
+          }
             
-        while(sread(sockfd,&message,sizeof(message))){
-
-                if ((message.code==RANKING)){
-                    struct Structplayer* players;
-                    int size;   
-                    sread(sockfd,&players,sizeof(players));
-                    sread(sockfd,&size,sizeof(size));
-                    printRanking(players,size);
-                    free(players);
-
-                }else{
-                    printf("Réponse Serveur: non prevue %d.\n", message.code);                
-                }
-            }
  
-            //  end 
-            printf("END GAME\n");
-            sclose(sockfd);
-            free(grille);
+          //  end 
+          printf("END GAME\n");
+          sclose(sockfd);
+          free(grille);
         
     }else{
 
