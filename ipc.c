@@ -1,19 +1,36 @@
 #include "ipc.h"
 #include "utils_v1.h"
 #include  "network_serveur.h"
+#include "player.h"
 
-int* initSharedMemory(){
-    int shm_id = sshmget(SHM_KEY, sizeof(int), IPC_CREAT | PERM);
-    int* z = sshmat(shm_id);
+
+
+Structplayer* initSharedMemory(int nbPlayers){
+    int shm_id = sshmget(SHM_KEY, nbPlayers*sizeof(Structplayer), IPC_CREAT | PERM);
+    Structplayer* z = sshmat(shm_id);
+
+    return z;
+}
+
+
+
+Structplayer* getsharedMemory(){
+    int shm_id = sshmget(SHM_KEY, sizeof(Structplayer), 0);
+    Structplayer* z = sshmat(shm_id);
 
     return z;
 }
 
 
+int initSemaphore(){
+    int idSem = sem_create(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 1);
+    return idSem;
+} 
 
-int* getsharedMemory(){
-    int shm_id = sshmget(SHM_KEY, sizeof(int), 0);
-    int* z = sshmat(shm_id);
 
-    return z;
-}
+int getSemaphore(){
+    int idSem = sem_get(SEM_KEY,1);
+    return idSem;
+} 
+
+

@@ -42,5 +42,12 @@ int digTile(int* tilebag, int* nextTile);
 */
 void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, int* nbPlayers);
  
- 
+/**
+* PRE:  players: The table of players that is going to be sorted
+        nbPlayers: The number of players present in the table
+* POST: The players table will be sorted by descending score
+* RES:  /
+*/
+void sortByScoreDescending (Structplayer*players, int nbPlayers);
+
 #endif

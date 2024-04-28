@@ -20,18 +20,7 @@ volatile sig_atomic_t end;
 //*********************************************************************************//
 //***********************************METHODES**************************************//
 //*********************************************************************************//
- 
-/**
-* PRE: /
-* POST: on success creates a random displayed table containing all the necessary tiles.
-* RES: returns a table of randomly displayed tiles, knowing that we have all of theese tiles :
-* 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-* 11, 11, 12, 12, 13, 13, 14, 14,
-* 15, 15, 16, 16, 17, 17, 18, 18,
-* 19, 19, 20, 21, 22, 23, 24, 25,
-* 26, 27, 28, 29, 30, 31;
-*/
- 
+
 int* createTiles(){
     int* tilebag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
     if(tilebag == NULL) {
@@ -67,26 +56,12 @@ int* createTiles(){
     return tilebag;
 }
  
-/**
-* PRE: tilebag: It is a Integer table with 40 randomly displayed tiles. 
-*      nextTile: It is the index we use to dig the next tile in the tilebag. 
-* POST: increments the nextTile, so the program knows which tile to dig next,
-*       once it is called again.
-* RES: returns the digged tile.
-*/ 
 int digTile(int* tilebag, int* nextTile) {
     int diggedTile = tilebag[*nextTile];
     (*nextTile)++;
     return diggedTile;
 }
- 
-/**
-* PRE: Player: The new player we are going to put in the table of players 
-*      nbPlayers: number of Players already in the table
-* POST: The playersTable will contain a new player.
-*       The number of players will be incremented, due to the new add.
-* RES: /
-*/
+
 void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, int* nbPlayers){
     //PUT THE NEW PLAYER'S PSEUDO AND SCORE IN THE TABLE
     strncpy(tableauDesJoueurs[*nbPlayers].pseudo, newPlayer.pseudo,strlen(newPlayer.pseudo));
@@ -95,6 +70,23 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
     tableauDesJoueurs[*nbPlayers].sockfd = newPlayer.sockfd;  
     (*nbPlayers)++;
 }
+
+void sortByScoreDescending(Structplayer *players, int nbPlayers){
+    int i, j;
+    Structplayer temp;
+    
+    for (i = 1; i < nbPlayers; i++) {
+        temp = players[i];
+        j = i - 1;
+        
+        // Move elements of players[0..i-1], that are greater than temp, to one position ahead of their current position
+        while (j >= 0 && players[j].score < temp.score) {
+            players[j + 1] = players[j];
+            j = j - 1;
+        }
+        players[j + 1] = temp;
+    }
+} 
  
 //*********************************************************************************//
 //******************************CHILD TREATMENT************************************//
@@ -131,8 +123,30 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
             swrite(pipefdO[1], &msg,sizeof(msg));
             printf("%d placement terminer envoyer\n ", i);
         } 
-    } 
- 
+    }
+
+
+    //RECEVOIR LE SCORE DU CLIENT
+    int score;
+    sread(*newsocket, &score, sizeof(int));
+    printf("Mon score chez le fils vaut : %d",score);
+    //ENVOYER LE SCORE AU PERE
+    swrite(pipefdO[1],&score, sizeof(int));
+
+    //ENVOYER MESSAGE RANKING
+    msg.code = RANKING;
+    char* message = "Voici le ranking de tous les joueur\n\0";
+    strcpy(msg.messageText,message);
+    swrite(pipefdO[1],&msg,sizeof(msg));
+    //Envoyer le nombre de joueurs
+    int nbrJoueurs;
+    sread(pipefdI[0],&nbrJoueurs,sizeof(int));
+    swrite(*newsocket,&nbrJoueurs,sizeof(int));
+
+    //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
+    Structplayer* playersRanking = getsharedMemory();
+    swrite(*newsocket, &playersRanking, sizeof(Structplayer));
+    
     //FERMER LA CONNECTION AVEC LE CLIENT
     sclose(*newsocket);
 }
@@ -155,19 +169,18 @@ int main(int argc, char const *argv[]) {
     //INITIALISER LE SOCKET SERVER 
     int sockfd = initSocketServer();
     printf("Le serveur tourne\n");
- 
+    
     //VARIABLES
     end = 0;
     int nbPlayers = 0;
-    // int indexPiocherTuile = 0;
     int newsockfd;
+    int nextTile = 0;
     StructMessage msg;
     Structplayer* tabPlayers = malloc (MAX_PLAYERS * sizeof(Structplayer));
     if(!tabPlayers){
         perror("ALLOCATION ERROR");
         exit(1);
     }
-    int nextTile = 0;
  
     //ALARMES
     ssigaction (SIGALRM, endServerHandler);
@@ -214,7 +227,12 @@ int main(int argc, char const *argv[]) {
             }
         }
     }
- 
+    
+    //CREATION DE MEMOIRE PARTAGEE ET CREATION DE SEMAPHORE
+    Structplayer* tableJoueursIPC = initSharedMemory(nbPlayers);
+    int semID = initSemaphore();
+
+    //CREATION DES PIPES POUR LA COMMUNCATION ENTRE PERE ET FILS
     typedef struct {
         int pipefdRead[2];
         int pipefdWrite[2]; 
@@ -303,6 +321,26 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < nbPlayers; ++i){
         swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
     }
+
+    //ON ENTRE DANS LA ZONE CRITIQUE
+    int scorePersonnel;
+    sem_down0(semID);
+    // JE RECUPERE TOUS LES SCORES DES JOUEURS ET JE LE METS DANS LA TABLE
+    for(int i=0 ;i<nbPlayers;i++){
+        sread(pipes[i].pipefdRead[0],&scorePersonnel,sizeof(int));
+        tabPlayers[i].score = scorePersonnel; 
+    }
+
+    //TRIER LES SCORES PAR ORDRE DECROISSANTE ET METTRE DANS MEMOIRE PARTAGEE
+    sortByScoreDescending(tabPlayers,nbPlayers);
+
+    //Mettre la table trié dans l'ipc
+    for(int i=0 ; i<nbPlayers; i++){
+        tableJoueursIPC[i] = tabPlayers[i];
+    } 
+    //ON SORT DE LA ZONE CRITIQUE
+    sem_up0 (semID); 
+    
     free(tilesbag);
     free(tabPlayers);
 
@@ -312,56 +350,8 @@ int main(int argc, char const *argv[]) {
         sclose(pipes[i].pipefdWrite[1]);
         sclose(pipes[i].pipefdRead[0]);
     } 
+    //attendre fils ou pas? 
     exit(0);
 } 
 
-/*
-    //SHARED MEMORY & SEMAPHORE
-    int shmid = sshmget(SHM_KEY, nbrJoueurs * sizeof(int), 0);
-    int sid = sem_get(SEM_KEY, 1);
- 
-    msgcode =START_GAME;
- 
-    //Mettre dans l'IPC un tableau avec des structPlayers
- 
- 
-    for(fds){
-        ret = swrite(fds[i], &msg, sizeof(msg));
-    }
- 
-    //appeller methode crer tuiles
-    tableau tuiles = createTuiles;
- 
-    //Commencer les 20 tours
- 
-    for(20){
-    //piocher tuile
-    char numeroTuile = piocher une tuile(tuiles);
- 
-    //envoyerTuile A tous les joueurs
-    for(int i=0; nbrJoueurs){
-        ret = swrite(fds[i],&numeroTuile, sizeof(char));
-    }
-    while(pasRecu nbrJoueurs PLACEMENT_TUILES){
-        sleep(1);
-    }
-    }
- 
-    //Je sors du for et je mets en place le sémaphore
-    // Recevoir 3 fois MES_POIǸTS
- 
-    -> setplayerIPC(player.pseudo,player.score);
- 
-    semaphore up.
- 
- 
-void setScorePlayerIPC(player.pseudo,player.score){
-    recuperer joueur dans la memoire partagee et changer direct le score.
-}
- 
-void trierRankingParScore(){
-    creer un nouveau tableau struct Joueurs organisé par score décroissant.
-}
- 
-*/
  
