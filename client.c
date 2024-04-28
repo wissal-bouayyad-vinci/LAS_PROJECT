@@ -151,10 +151,8 @@ int main(int argc, char const *argv[])
         
         // on a fini le jeux 
         int scoreFinal = scoreCalculation(grille);
-        Structplayer player ;
-        strcpy(player.pseudo,pseudoPlayer);
-        player.score=scoreFinal;
-        ret = swrite(sockfd,&player,sizeof(player));
+        int score=scoreFinal;
+        ret = swrite(sockfd,&score,sizeof(int));
             
         while(sread(sockfd,&message,sizeof(message))){
 
