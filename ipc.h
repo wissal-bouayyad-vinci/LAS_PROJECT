@@ -1,12 +1,18 @@
 #ifndef IPC_H
 #define IPC_H 
 
+#include "player.h"
+
+#define PERM 0666
+#define SEM_KEY  3
+#define SHM_KEY  4
+
 /**
- * PRE: 
+ * PRE: nbrPlayers: the number of players we need to keep space for in the memory zone
  * POST: on success, you get the shared memory pointer.
  * RES:  return a pointer to the shared memory.
  */
-int* initSharedMemory();
+Structplayer* initSharedMemory(int nbrPlayers);
 
 
 /**
@@ -14,6 +20,20 @@ int* initSharedMemory();
  * POST: on success, you get the shared memory pointer.
  * RES:  return a pointer to the shared memory.
  */
-int* getsharedMemory();
+Structplayer* getsharedMemory();
+
+/**
+ * PRE:
+ * POST: on success,you get the semaphore id 
+ * RES: return the semaphore's id  
+ */
+int initSemaphore();
+
+/**
+ * PRE:
+ * POST: on success, you get the semaphore id
+ * RES: return the semaphore's id
+*/
+int getSemaphore();
 
 #endif
