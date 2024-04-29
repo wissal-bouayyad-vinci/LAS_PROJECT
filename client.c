@@ -236,10 +236,12 @@ int main(int argc, char const *argv[])
             printf("END GAME\n");
             free(grille);
             free(players);
+            sclose(sockfd);
         } 
             
     }else{
         printf("Jeu annulé : il manque des joueurs\n");
+        sclose(sockfd);
     }
  
     return 0;

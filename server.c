@@ -19,13 +19,16 @@
  
 //GLOBALS VARIABLES
 volatile sig_atomic_t end;
- 
+volatile sig_atomic_t endGame;
+volatile sig_atomic_t cptTuiles = 0;
+
+
 //*********************************************************************************//
 //***********************************METHODES**************************************//
 //*********************************************************************************//
 
  
- void freeAll(int* tilebag, Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers){
+ void freeAll( Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers){
 
     for(int i=0 ; i<nbPlayers ; i++){
         //FERMETURE DE TOUS LES PIPES CÔTE PÈRE
@@ -38,7 +41,7 @@ volatile sig_atomic_t end;
     sshmdelete(shmId);
     sem_delete(sem_id);
     //FREE DE LA MÉMOIRE ALLOUÉE
-    free(tilebag);
+    
     free(tabPlayers);
  }
 
@@ -208,12 +211,24 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
 void endServerHandler (int sig) {
     end = 1;
 }
+
+
+//*********************************************************************************//
+//*****************************END_GAME_HANDLER**********************************//
+//*********************************************************************************//
+ 
+ 
+void endGameHandler (int sig) {
+    endGame = 1;
+}
  
 //*********************************************************************************//
 //****************************************MAIN*************************************//
 //*********************************************************************************//
  
 int main(int argc, char const *argv[]) {
+
+    
  
     //INITIALISER LE SOCKET SERVER
     if(argc < 2){
@@ -223,19 +238,25 @@ int main(int argc, char const *argv[]) {
     int port = atoi(argv[1]); 
     int sockfd = initSocketServer(port);
     printf("Le serveur tourne dans le port %d\n",port);
+
+
+
     //Recuperer le fichier tuiles
     FILE *fdTuiles;
     if(argc == 3){
         fdTuiles = fopen(argv[2],"r");   
     }
-    
+
+    int* tilesbag;
+    while(!endGame){
+
     //VARIABLES
     end = 0;
     int nbPlayers = 0;
     int newsockfd;
     int nextTile = 0;
     StructMessage msg;
-    int* tilesbag;
+   
     Structplayer* tabPlayers = malloc (MAX_PLAYERS * sizeof(Structplayer));
     if(!tabPlayers){
         perror("ALLOCATION ERROR");
@@ -244,12 +265,14 @@ int main(int argc, char const *argv[]) {
  
     //ALARMES
     ssigaction (SIGALRM, endServerHandler);
-    // ssigaction(SIGINT,freeAll);
+    ssigaction(SIGINT,endGameHandler);
+
  
     //*********************************************************************************//
     //*******************************INSCRIPTIONS**************************************//
     //*********************************************************************************//
  
+
     alarm(TIME_INSCRIPTION);
  
     while (!end) {
@@ -265,7 +288,7 @@ int main(int argc, char const *argv[]) {
  
                 if (nbPlayers < MAX_PLAYERS) {
                     msg.code = INSCRIPTION_OK;
- 
+     
                     Structplayer newPlayer;
                     strcpy(newPlayer.pseudo, msg.messageText);
                     newPlayer.score = 0;
@@ -359,7 +382,7 @@ int main(int argc, char const *argv[]) {
             tilesbag = createTiles();
         }else{
             tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
-            int cptTuiles = 0;
+            
             while(fscanf(fdTuiles, "%d", &tilesbag[cptTuiles])==1){
                 cptTuiles++;
             } ;
@@ -425,7 +448,8 @@ int main(int argc, char const *argv[]) {
 
         //ON SORT DE LA ZONE CRITIQUE
         sem_up0 (semID); 
-
+        
+        msg.code = END_GAME;
         for (int i = 0; i < nbPlayers; ++i){
             swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
             printf("message.code ENDGAME %d\n", msg.code);
@@ -435,10 +459,13 @@ int main(int argc, char const *argv[]) {
         {
             swait(&fils[i]);
         }        
+    }    
+        freeAll(tabPlayers,pipes, shmId, semID,nbPlayers);
+
     }
 
-    freeAll(tilesbag,tabPlayers,pipes, shmId, semID,nbPlayers);
-    exit(0);
+    free(tilesbag);
+
 } 
 
 
