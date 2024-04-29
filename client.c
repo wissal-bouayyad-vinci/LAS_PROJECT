@@ -57,9 +57,9 @@ int main(int argc, char const *argv[])
     int SERVER_PORT = atoi(argv[1]);
 
     //RECUPERER LE FICHIER PLACEMENTS
-    /* if(argc == 3){
+    if(argc == 3){
       int fdPlacements = sopen(argv[2], O_WRONLY | O_TRUNC | O_CREAT, 0644);    
-    } */
+    } 
 
     // attributs : 
     Structplayer* players;
@@ -162,7 +162,7 @@ int main(int argc, char const *argv[])
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
-        printf("FIN DU JEUX VOICI VOS POINTS, %d\n",scoreFinal);
+        
 
         // attend message ranking
         sread(sockfd,&message,sizeof(message));
@@ -170,7 +170,7 @@ int main(int argc, char const *argv[])
         if ((message.code==RANKING)){
             int size;   
             sread(sockfd,&size,sizeof(size));
-            printf("VOICI LE NOMBRE DE JOUEUR : %d\n", size);
+            
             players =  malloc (size * sizeof(Structplayer));
             if(!players){
                 perror("ALLOCATION ERROR");
@@ -183,9 +183,8 @@ int main(int argc, char const *argv[])
                 sread(sockfd,&newplayer,sizeof(Structplayer));
                 strcpy(players[i].pseudo,newplayer.pseudo);
                 players[i].score = newplayer.score;
-                printf("PLAYER pseudo %s\n", players[i].pseudo);
+                
             }
-            printf("ON SE TREVE APRES LECTURE JOUEUR %s\n", players[1].pseudo);
             printRanking(players,size);
 
         }else{
