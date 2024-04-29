@@ -254,12 +254,13 @@ int main(int argc, char const *argv[]) {
         }
 
         tilesTemp =malloc(cpt*sizeof(int));
-        if (tilesTemp){
+        if (tilesTemp==NULL){
             perror("tilesTemp error allocation");
             exit(1);
         }
 
-        while(fscanf(fdTuiles, "%d", &tilesTemp)==1){
+        cpt=0;
+        while(fscanf(fdTuiles, "%d", &tilesTemp[cpt])==1){
             cpt++;
         }
     }
@@ -396,7 +397,7 @@ int main(int argc, char const *argv[]) {
             swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
         } 
 
-        if(fdTuiles == NULL || nextTileTemp>=cpt){
+        if(fdTuiles == NULL ){
             tilesbag = createTiles();
         }else{
             tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
