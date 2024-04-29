@@ -43,7 +43,7 @@ void printRanking( Structplayer* players,int size){
     printf("RANKING FINAL\n");
     for (int i = 0; i < size; ++i)
     {
-        printf("%d. %s with a score of %d\n",(i+1),players[i].pseudo, players[i].score);
+        printf("%d. %s avec un score de %d\n",(i+1),players[i].pseudo, players[i].score);
     }
 }
  
@@ -143,39 +143,60 @@ int main(int argc, char const *argv[])
             }
         }
 
-        
+
+
         // on a fini le jeux 
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
+        printf("FIN DU JEUX VOICI VOS POINTS, %d\n",scoreFinal);
 
         // attend message ranking
         sread(sockfd,&message,sizeof(message));
 
-            if ((message.code==RANKING)){
-                    struct Structplayer* players;
-                    int size;   
-                    sread(sockfd,&size,sizeof(size));
-                    sread(sockfd,&players,sizeof(players));
-                    printRanking(players,size);
-                    free(players);
-
-            }else{
-                printf("Réponse Serveur: non prevue %d.\n", message.code);                
+        if ((message.code==RANKING)){
+            int size;   
+            sread(sockfd,&size,sizeof(size));
+            printf("VOICI LE NOMBRE DE JOUEUR : %d\n", size);
+            Structplayer* players =  malloc (size * sizeof(Structplayer));
+            if(!players){
+                perror("ALLOCATION ERROR");
+                exit(1);
             }
+
+            for (int i = 0; i < size; ++i)
+            {
+                Structplayer newplayer;
+                sread(sockfd,&newplayer,sizeof(Structplayer));
+                strcpy(players[i].pseudo,newplayer.pseudo);
+                players[i].score = newplayer.score;
+                printf("PLAYER pseudo %s\n", players[i].pseudo);
+            }
+            printf("ON SE TREVE APRES LECTURE JOUEUR %s\n", players[1].pseudo);
+            printRanking(players,size);
+
+            free(players);
+
+
+        }else{
+            printf("Réponse Serveur: non prevue %d.\n", message.code);                
+        }
             
  
           //  end 
           printf("END GAME\n");
-          sclose(sockfd);
+          message.code = END_GAME;
+          swrite(sockfd,&message,sizeof(message));
+
           free(grille);
         
     }else{
 
         printf("Jeu annulé : il manque des joueurs\n");
-        sclose(sockfd);
+        // sclose(sockfd);
     }
  
+    // sclose(sockfd);
     return 0;
 
 }

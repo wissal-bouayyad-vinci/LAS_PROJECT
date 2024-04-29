@@ -2,7 +2,7 @@
 #define NETWORK_SERVER_H
  
 //VARIABLES USED IN SERVER
-#define MAX_PLAYERS 3
+#define MAX_PLAYERS 5
 #define MIN_PLAYERS 2
  
 /**

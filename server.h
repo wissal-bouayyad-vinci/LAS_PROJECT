@@ -3,13 +3,22 @@
  
 #include "player.h"
  
-#define MAX_PLAYERS 3
+#define MAX_PLAYERS 5
 #define TIME_INSCRIPTION 30
 #define NUMBER_OF_PLAYS 20
 #define NUMBER_OF_TILES 40
 #define NUMBER_OF_USED_TILES 20
 #define SCORE_TABLE_SIZE 3
 #define TOTAL_TILES 40
+
+
+
+ //CREATION DES PIPES POUR LA COMMUNCATION ENTRE PERE ET FILS
+    typedef struct structPipe{
+        int pipefdRead[2];
+        int pipefdWrite[2]; 
+    }structPipe;
+
  
 /**
 * PRE: /
@@ -49,5 +58,13 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
 * RES:  /
 */
 void sortByScoreDescending (Structplayer*players, int nbPlayers);
+
+/**
+ * 
+ */ 
+
+ void freeAll(int* tilebag, Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers);
+
+
 
 #endif

@@ -21,6 +21,19 @@ volatile sig_atomic_t end;
 //***********************************METHODES**************************************//
 //*********************************************************************************//
 
+ 
+ void freeAll(int* tilebag, Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers){
+    free(tilebag);
+    free(tabPlayers);
+
+     for(int i=0 ; i<nbPlayers ; i++){
+        sclose(pipes[i].pipefdWrite[1]);
+        sclose(pipes[i].pipefdRead[0]);
+    } 
+    sshmdelete(shmId);
+    sem_delete(sem_id);
+ }
+
 int* createTiles(){
     int* tilebag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
     if(tilebag == NULL) {
@@ -106,7 +119,8 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     StructMessage msg;
     sread(pipefdI[0],&msg,sizeof(msg));
     printf("Code du message recu du pere : %d\n ",msg.code);
- 
+
+
     //ENVOYER LE MESSAGE DU PERE AU CLIENT
     swrite(*newsocket, &msg, sizeof(msg));
     printf("Code du message recu du pere : %d\n ",msg.code);
@@ -136,7 +150,7 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     //ENVOYER MESSAGE RANKING
     sread(pipefdI[0],&msg,sizeof(msg));
     swrite(*newsocket,&msg,sizeof(msg));
-    printf("ranking server\n");
+    printf("envoie message ranking : %d\n ", msg.code);
 
     //Envoyer le nombre de joueurs
     int nbrJoueurs;
@@ -144,21 +158,38 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     swrite(*newsocket,&nbrJoueurs,sizeof(int));
     printf("nombre joueur chils_trt : %d\n", nbrJoueurs);
 
+
     //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
     int semID = getSemaphore();
     sem_down0(semID);
-    printf("semId child_trt : %d \n",semID);
     Structplayer* playersRankingSHM = getsharedMemory(nbrJoueurs);
-    Structplayer* playersRanking;
+    // sread(pipefdI[0],&playersRankingSHM,sizeof(Structplayer));
+    // printf("playersRankingSHM recu du père : %s\n", playersRankingSHM[0].pseudo);
+    Structplayer* playersRanking = malloc (nbrJoueurs * sizeof(Structplayer));
+
+    if(!playersRanking){
+        perror("ALLOCATION ERROR");
+        exit(1);
+    }
     for(int i=0 ; i<nbrJoueurs ; i++){
-        playersRanking[i] = playersRankingSHM[i];
-        printf("voici les joueur de ma table ranking %s\n",playersRanking[i].pseudo );  
+        strcpy(playersRanking[i].pseudo, playersRankingSHM[i].pseudo);
+        playersRanking[i].score = playersRankingSHM[i].score;
+        printf("voici les joueur de ma table ranking %s\n",playersRanking[i].pseudo ); 
+        swrite(*newsocket,&playersRanking[i],sizeof(Structplayer)); 
     } 
 
-    swrite(*newsocket, &playersRanking, sizeof(Structplayer));
+    // swrite(*newsocket, &playersRanking, sizeof(Structplayer));
+    printf("child_trt : playersRanking\n");
     sem_up0(semID);
+
+    sread(*newsocket,&msg,sizeof(msg));
+    swrite(pipefdO[1],&msg,sizeof(msg));
+
     //FERMER LA CONNECTION AVEC LE CLIENT
-    sclose(*newsocket);
+    // free(playersRanking);
+    // sclose(pipefdI[0]);
+    // sclose(pipefdO[1]);
+    // sclose(*newsocket);
 }
  
 //*********************************************************************************//
@@ -194,13 +225,13 @@ int main(int argc, char const *argv[]) {
  
     //ALARMES
     ssigaction (SIGALRM, endServerHandler);
-
+    // ssigaction(SIGINT,freeAll);
  
     //*********************************************************************************//
     //*******************************INSCRIPTIONS**************************************//
     //*********************************************************************************//
  
-    alarm(15);
+    alarm(50);
  
     while (!end) {
         //CLIENT TREATMENT
@@ -243,11 +274,7 @@ int main(int argc, char const *argv[]) {
     Structplayer* tableJoueursIPC = attacheSHM(shmId);
     int semID = initSemaphore();
 
-    //CREATION DES PIPES POUR LA COMMUNCATION ENTRE PERE ET FILS
-    typedef struct {
-        int pipefdRead[2];
-        int pipefdWrite[2]; 
-    }structPipe;
+   
 
     structPipe* pipes = malloc (nbPlayers*sizeof(structPipe));
     if(!pipes){
@@ -255,6 +282,12 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }   
     printf("FIN DES INSCRIPTIONS\n");
+
+    int* fils= malloc (nbPlayers*sizeof(int));
+    if(!fils){
+        perror("Error in allocation");
+        exit(1);
+    }   
 
     for(int i=0 ; i<nbPlayers; i++){
         int pipefdI[2];
@@ -266,8 +299,8 @@ int main(int argc, char const *argv[]) {
         pipes[i].pipefdRead[1]  = pipefdI[1] ;
         pipes[i].pipefdWrite[0]  = pipefdO[0] ;
         pipes[i].pipefdWrite[1]  = pipefdO[1] ; 
-        fork_and_run3(child_trt,pipes[i].pipefdRead, pipes[i].pipefdWrite , &tabPlayers[i].sockfd);
-    
+        int idFils = fork_and_run3(child_trt,pipes[i].pipefdRead, pipes[i].pipefdWrite , &tabPlayers[i].sockfd);
+        fils[i] = idFils;
         //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
         sclose(pipes[i].pipefdWrite[0]);
         //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
@@ -295,6 +328,8 @@ int main(int argc, char const *argv[]) {
     //*********************************************************************************//
     printf ("La jeu va commencer\n");
     msg.code = START_GAME;
+    char* message = "Partie va commencer\n";
+    strcpy(msg.messageText, message);
     printf ("Message que le père encode : %s; Code du message : %d\n",msg.messageText,msg.code);
 
     for(int i= 0 ; i<nbPlayers; i++){
@@ -347,31 +382,60 @@ int main(int argc, char const *argv[]) {
 
     //Mettre la table trié dans l'ipc
     for(int i=0 ; i<nbPlayers; i++){
-        tableJoueursIPC[i] = tabPlayers[i];
+        strcpy(tableJoueursIPC[i].pseudo ,tabPlayers[i].pseudo);
+        tableJoueursIPC[i].score = tabPlayers[i].score;
     }
 
     msg.code= RANKING;
     for (int i = 0; i < nbPlayers; ++i){
         swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
         swrite(pipes[i].pipefdWrite[1],&nbPlayers,sizeof(int));
+        swrite(pipes[i].pipefdWrite[1],&tableJoueursIPC,sizeof(Structplayer));
         printf("nbPlayers pere : %d",nbPlayers);
     }
 
     //ON SORT DE LA ZONE CRITIQUE
     sem_up0 (semID); 
-    
-    free(tilesbag);
-    free(tabPlayers);
 
+    int cptEndGame=0;
+    for (int i = 0; i < nbPlayers; ++i){
+        sread(pipes[i].pipefdRead[0],&msg,sizeof(msg));
+        printf("message.code ENDGAME %d\n", msg.code);
+        if (msg.code==END_GAME)
+        {
+            cptEndGame++;
+
+        }
     }
+
+    for (int i = 0; i < nbPlayers; ++i)
+    {
+        swait(&fils[i]);
+    }
+
+    if (cptEndGame==nbPlayers)
+    {
+        freeAll(tilesbag,tabPlayers,pipes, shmId, semID,nbPlayers);
+    }
+    
+    // free(tilebag);
+    // free(tabPlayers);
+    }
+    
+
     // ON CLOTURE TOUTES LES PIPES
-    for(int i=0 ; i<nbPlayers ; i++){
-        sclose(pipes[i].pipefdWrite[1]);
-        sclose(pipes[i].pipefdRead[0]);
-    } 
-    sshmdelete(shmId);
+   
+    
     //attendre fils ou pas? 
     exit(0);
 } 
 
- 
+
+
+
+
+
+
+
+
+
