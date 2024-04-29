@@ -16,7 +16,15 @@
 #include "network_serveur.h"
 #include "server.h"
 #include "player.h"
- 
+/**
+*BOUAYYAD WISSAL
+*BARROS SOUSA ERICA
+*GROUPE n° 28
+*/
+
+
+
+
 //GLOBALS VARIABLES
 volatile sig_atomic_t end;
 volatile sig_atomic_t endGame;
