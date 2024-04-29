@@ -9,7 +9,7 @@
 #include "config.h"
 
 
-int initSocketServer()
+int initSocketServer(int port)
 {
     int sockfd = ssocket();
 
@@ -18,8 +18,8 @@ int initSocketServer()
 	int option = 1;
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int));
     
-    sbind(SERVER_PORT, sockfd);
+    sbind(port, sockfd);
     slisten(sockfd, BACKLOG);
- 
+    
     return sockfd;
 }

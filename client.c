@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include "player.h"
 #include "game.h"
@@ -49,7 +50,19 @@ void printRanking( Structplayer* players,int size){
  
 int main(int argc, char const *argv[])
 {
+    if(argc < 2){
+        perror("Missing port");
+        exit(1);
+    }
+    int SERVER_PORT = atoi(argv[1]);
+
+    //RECUPERER LE FICHIER PLACEMENTS
+    /* if(argc == 3){
+      int fdPlacements = sopen(argv[2], O_WRONLY | O_TRUNC | O_CREAT, 0644);    
+    } */
+
     // attributs : 
+    Structplayer* players;
     char pseudoPlayer[MAX_PSEUDO];
     int sockfd;
     int ret;
@@ -158,7 +171,7 @@ int main(int argc, char const *argv[])
             int size;   
             sread(sockfd,&size,sizeof(size));
             printf("VOICI LE NOMBRE DE JOUEUR : %d\n", size);
-            Structplayer* players =  malloc (size * sizeof(Structplayer));
+            players =  malloc (size * sizeof(Structplayer));
             if(!players){
                 perror("ALLOCATION ERROR");
                 exit(1);
@@ -175,28 +188,23 @@ int main(int argc, char const *argv[])
             printf("ON SE TREVE APRES LECTURE JOUEUR %s\n", players[1].pseudo);
             printRanking(players,size);
 
-            free(players);
-
-
         }else{
             printf("Réponse Serveur: non prevue %d.\n", message.code);                
         }
             
  
-          //  end 
-          printf("END GAME\n");
-          message.code = END_GAME;
-          swrite(sockfd,&message,sizeof(message));
-
-          free(grille);
-        
+        //  end         
+        sread(sockfd,&message,sizeof(message));
+        if(message.code == END_GAME){
+            printf("END GAME\n");
+            free(grille);
+            free(players);
+        } 
+            
     }else{
-
         printf("Jeu annulé : il manque des joueurs\n");
-        // sclose(sockfd);
     }
  
-    // sclose(sockfd);
     return 0;
 
 }

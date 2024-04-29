@@ -3,10 +3,13 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <ctype.h> 
 #include "message.h"
 #include "utils_v1.h"
 #include "ipc.h"
@@ -23,15 +26,20 @@ volatile sig_atomic_t end;
 
  
  void freeAll(int* tilebag, Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers){
-    free(tilebag);
-    free(tabPlayers);
 
-     for(int i=0 ; i<nbPlayers ; i++){
+    for(int i=0 ; i<nbPlayers ; i++){
+        //FERMETURE DE TOUS LES PIPES CÔTE PÈRE
         sclose(pipes[i].pipefdWrite[1]);
         sclose(pipes[i].pipefdRead[0]);
+        //FERMETURE DE TOUS LES SOCKETS CLIENTS
+        sclose(tabPlayers[i].sockfd);
     } 
+    //SUPPRESSION MEMOIRE PARTAGEE
     sshmdelete(shmId);
     sem_delete(sem_id);
+    //FREE DE LA MÉMOIRE ALLOUÉE
+    free(tilebag);
+    free(tabPlayers);
  }
 
 int* createTiles(){
@@ -182,14 +190,14 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     printf("child_trt : playersRanking\n");
     sem_up0(semID);
 
-    sread(*newsocket,&msg,sizeof(msg));
-    swrite(pipefdO[1],&msg,sizeof(msg));
+    //ENVOYER ENDGAME AU CLIENT
+    sread(pipefdI[0] ,&msg,sizeof(msg));
+    swrite(*newsocket,&msg,sizeof(msg));
 
-    //FERMER LA CONNECTION AVEC LE CLIENT
-    // free(playersRanking);
-    // sclose(pipefdI[0]);
-    // sclose(pipefdO[1]);
-    // sclose(*newsocket);
+    //FERMER LA COMMUNICATION AVEC LE PERE
+    free(playersRanking);
+    sclose(pipefdI[0]);
+    sclose(pipefdO[1]);
 }
  
 //*********************************************************************************//
@@ -207,9 +215,19 @@ void endServerHandler (int sig) {
  
 int main(int argc, char const *argv[]) {
  
-    //INITIALISER LE SOCKET SERVER 
-    int sockfd = initSocketServer();
-    printf("Le serveur tourne\n");
+    //INITIALISER LE SOCKET SERVER
+    if(argc < 2){
+        perror("Missing port");
+        exit(1);
+    }
+    int port = atoi(argv[1]); 
+    int sockfd = initSocketServer(port);
+    printf("Le serveur tourne dans le port %d\n",port);
+    //Recuperer le fichier tuiles
+    File *fdTuiles;
+    if(argc == 3){
+        fdTuiles = fopen(argv[2],"r");   
+    }
     
     //VARIABLES
     end = 0;
@@ -217,6 +235,7 @@ int main(int argc, char const *argv[]) {
     int newsockfd;
     int nextTile = 0;
     StructMessage msg;
+    int* tilesbag;
     Structplayer* tabPlayers = malloc (MAX_PLAYERS * sizeof(Structplayer));
     if(!tabPlayers){
         perror("ALLOCATION ERROR");
@@ -231,7 +250,7 @@ int main(int argc, char const *argv[]) {
     //*******************************INSCRIPTIONS**************************************//
     //*********************************************************************************//
  
-    alarm(50);
+    alarm(TIME_INSCRIPTION);
  
     while (!end) {
         //CLIENT TREATMENT
@@ -323,110 +342,101 @@ int main(int argc, char const *argv[]) {
     
     } else {
  
-    //*********************************************************************************//
-    //*******************************COMMENCER PARTIE************************************//
-    //*********************************************************************************//
-    printf ("La jeu va commencer\n");
-    msg.code = START_GAME;
-    char* message = "Partie va commencer\n";
-    strcpy(msg.messageText, message);
-    printf ("Message que le père encode : %s; Code du message : %d\n",msg.messageText,msg.code);
+        //*********************************************************************************//
+        //*******************************COMMENCER PARTIE************************************//
+        //*********************************************************************************//
+        printf ("La jeu va commencer\n");
+        msg.code = START_GAME;
+        char* message = "Partie va commencer\n";
+        strcpy(msg.messageText, message);
+        printf ("Message que le père encode : %s; Code du message : %d\n",msg.messageText,msg.code);
 
-    for(int i= 0 ; i<nbPlayers; i++){
-        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
-    } 
-
-    int* tilesbag = createTiles();
-    int cptPlacedTiles = 0;
-    int tileNumber;
-    int cptPlacement =0;
-    for (int i=0 ; i<NUMBER_OF_PLAYS;i++){
-        //ENVOYER TUILE AU FILS
-        tileNumber = digTile(tilesbag,&nextTile);
-        msg.code = NUMERO_TUILE;
-        msg.tuile = tileNumber;
-
-        for(int i=0 ; i<nbPlayers ; i++){
-            swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(StructMessage));
+        for(int i= 0 ; i<nbPlayers; i++){
+            swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
         } 
 
+        if(fdTuiles == NULL){
+            tilesbag = createTiles();
+        }else{
+            int cptTuiles = 0;
+            while(fscanf(fdTuiles, "%d", &tilesbag[cptTuiles])==1){
+                cptTuiles++;
+            } ;
+        
+        } 
+        
+        int cptPlacedTiles = 0;
+        int tileNumber;
+        int cptPlacement =0;
+        for (int i=0 ; i<NUMBER_OF_PLAYS;i++){
+            //ENVOYER TUILE AU FILS
+            tileNumber = digTile(tilesbag,&nextTile);
+            msg.code = NUMERO_TUILE;
+            msg.tuile = tileNumber;
 
-        for(int i=0 ; i<nbPlayers ; i++){
-            sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
-            printf("fils envoie %d placement terminer \n ",cptPlacement);
-            if(msg.code == PLACEMENT_TERMINE){
-                cptPlacedTiles++;
-                cptPlacement++;
+            for(int i=0 ; i<nbPlayers ; i++){
+                swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(StructMessage));
             } 
+
+
+            for(int i=0 ; i<nbPlayers ; i++){
+                sread(pipes[i].pipefdRead[0] , &msg, sizeof(msg));
+                printf("fils envoie %d placement terminer \n ",cptPlacement);
+                if(msg.code == PLACEMENT_TERMINE){
+                    cptPlacedTiles++;
+                    cptPlacement++;
+                } 
+            }
+
+
+        }
+        printf("Les 20 tours sont terminés!\n ");
+        
+
+
+        
+
+        //ON ENTRE DANS LA ZONE CRITIQUE
+        int scorePersonnel;
+        sem_down0(semID);
+        // JE RECUPERE TOUS LES SCORES DES JOUEURS ET JE LE METS DANS LA TABLE
+        for(int i=0 ;i<nbPlayers;i++){
+            sread(pipes[i].pipefdRead[0],&scorePersonnel,sizeof(int));
+            tabPlayers[i].score = scorePersonnel; 
         }
 
+        //TRIER LES SCORES PAR ORDRE DECROISSANTE ET METTRE DANS MEMOIRE PARTAGEE
+        sortByScoreDescending(tabPlayers,nbPlayers);
 
-    }
-    printf("Les 20 tours sont terminés!\n ");
-    
+        //Mettre la table trié dans l'ipc
+        for(int i=0 ; i<nbPlayers; i++){
+            strcpy(tableJoueursIPC[i].pseudo ,tabPlayers[i].pseudo);
+            tableJoueursIPC[i].score = tabPlayers[i].score;
+        }
 
+        msg.code= RANKING;
+        for (int i = 0; i < nbPlayers; ++i){
+            swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
+            swrite(pipes[i].pipefdWrite[1],&nbPlayers,sizeof(int));
+            swrite(pipes[i].pipefdWrite[1],&tableJoueursIPC,sizeof(Structplayer));
+            printf("nbPlayers pere : %d",nbPlayers);
+        }
 
-    
+        //ON SORT DE LA ZONE CRITIQUE
+        sem_up0 (semID); 
 
-    //ON ENTRE DANS LA ZONE CRITIQUE
-    int scorePersonnel;
-    sem_down0(semID);
-    // JE RECUPERE TOUS LES SCORES DES JOUEURS ET JE LE METS DANS LA TABLE
-    for(int i=0 ;i<nbPlayers;i++){
-        sread(pipes[i].pipefdRead[0],&scorePersonnel,sizeof(int));
-        tabPlayers[i].score = scorePersonnel; 
-    }
+        for (int i = 0; i < nbPlayers; ++i){
+            swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
+            printf("message.code ENDGAME %d\n", msg.code);
+        }
 
-    //TRIER LES SCORES PAR ORDRE DECROISSANTE ET METTRE DANS MEMOIRE PARTAGEE
-    sortByScoreDescending(tabPlayers,nbPlayers);
-
-    //Mettre la table trié dans l'ipc
-    for(int i=0 ; i<nbPlayers; i++){
-        strcpy(tableJoueursIPC[i].pseudo ,tabPlayers[i].pseudo);
-        tableJoueursIPC[i].score = tabPlayers[i].score;
-    }
-
-    msg.code= RANKING;
-    for (int i = 0; i < nbPlayers; ++i){
-        swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
-        swrite(pipes[i].pipefdWrite[1],&nbPlayers,sizeof(int));
-        swrite(pipes[i].pipefdWrite[1],&tableJoueursIPC,sizeof(Structplayer));
-        printf("nbPlayers pere : %d",nbPlayers);
-    }
-
-    //ON SORT DE LA ZONE CRITIQUE
-    sem_up0 (semID); 
-
-    int cptEndGame=0;
-    for (int i = 0; i < nbPlayers; ++i){
-        sread(pipes[i].pipefdRead[0],&msg,sizeof(msg));
-        printf("message.code ENDGAME %d\n", msg.code);
-        if (msg.code==END_GAME)
+        for (int i = 0; i < nbPlayers; ++i)
         {
-            cptEndGame++;
-
-        }
+            swait(&fils[i]);
+        }        
     }
 
-    for (int i = 0; i < nbPlayers; ++i)
-    {
-        swait(&fils[i]);
-    }
-
-    if (cptEndGame==nbPlayers)
-    {
-        freeAll(tilesbag,tabPlayers,pipes, shmId, semID,nbPlayers);
-    }
-    
-    // free(tilebag);
-    // free(tabPlayers);
-    }
-    
-
-    // ON CLOTURE TOUTES LES PIPES
-   
-    
-    //attendre fils ou pas? 
+    freeAll(tilesbag,tabPlayers,pipes, shmId, semID,nbPlayers);
     exit(0);
 } 
 
