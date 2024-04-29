@@ -258,6 +258,10 @@ int main(int argc, char const *argv[]) {
             perror("tilesTemp error allocation");
             exit(1);
         }
+
+        while(fscanf(fdTuiles, "%d", &tilesTemp)==1){
+            cpt++;
+        }
     }
 
     int nextTileTemp=0; 
