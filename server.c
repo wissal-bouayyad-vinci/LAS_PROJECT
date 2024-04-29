@@ -20,7 +20,6 @@
 //GLOBALS VARIABLES
 volatile sig_atomic_t end;
 volatile sig_atomic_t endGame;
-volatile sig_atomic_t cptTuiles = 0;
 
 
 //*********************************************************************************//
@@ -28,7 +27,7 @@ volatile sig_atomic_t cptTuiles = 0;
 //*********************************************************************************//
 
  
- void freeAll( Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers){
+ void freeAll( Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,Structplayer* tableJoueursIPC,int nbPlayers){
 
     for(int i=0 ; i<nbPlayers ; i++){
         //FERMETURE DE TOUS LES PIPES CÔTE PÈRE
@@ -38,11 +37,12 @@ volatile sig_atomic_t cptTuiles = 0;
         sclose(tabPlayers[i].sockfd);
     } 
     //SUPPRESSION MEMOIRE PARTAGEE
+    sshmdt(tableJoueursIPC);
     sshmdelete(shmId);
     sem_delete(sem_id);
     //FREE DE LA MÉMOIRE ALLOUÉE
-    
     free(tabPlayers);
+
  }
 
 int* createTiles(){
@@ -198,6 +198,7 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     swrite(*newsocket,&msg,sizeof(msg));
 
     //FERMER LA COMMUNICATION AVEC LE PERE
+    sshmdt(playersRankingSHM);
     free(playersRanking);
     sclose(pipefdI[0]);
     sclose(pipefdO[1]);
@@ -242,11 +243,24 @@ int main(int argc, char const *argv[]) {
 
 
     //Recuperer le fichier tuiles
+    int* tilesTemp;
+    int cpt=0;
     FILE *fdTuiles;
     if(argc == 3){
-        fdTuiles = fopen(argv[2],"r");   
+        fdTuiles = fopen(argv[2],"r");
+        int nbr;
+        while(fscanf(fdTuiles, "%d", &nbr)==1){
+            cpt++;
+        }
+
+        tilesTemp =malloc(cpt*sizeof(int));
+        if (tilesTemp){
+            perror("tilesTemp error allocation");
+            exit(1);
+        }
     }
 
+    int nextTileTemp=0; 
     int* tilesbag;
     while(!endGame){
 
@@ -272,7 +286,7 @@ int main(int argc, char const *argv[]) {
     //*******************************INSCRIPTIONS**************************************//
     //*********************************************************************************//
  
-
+    printf("LES INSCRIPTIONS VONT COMMENCER\n");
     alarm(TIME_INSCRIPTION);
  
     while (!end) {
@@ -378,15 +392,20 @@ int main(int argc, char const *argv[]) {
             swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
         } 
 
-        if(fdTuiles == NULL){
+        if(fdTuiles == NULL || nextTileTemp>=cpt){
             tilesbag = createTiles();
         }else{
             tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
-            
-            while(fscanf(fdTuiles, "%d", &tilesbag[cptTuiles])==1){
-                cptTuiles++;
-            } ;
-        
+            if (tilesbag ==NULL)
+            {
+                perror("tilesbag error allocation");
+                exit(1);
+            }
+            for (int i = 0; i < NUMBER_OF_TILES; ++i){
+                tilesbag[i] = tilesTemp[nextTileTemp];
+                nextTileTemp++;
+            }
+
         } 
         
         int cptPlacedTiles = 0;
@@ -448,7 +467,7 @@ int main(int argc, char const *argv[]) {
 
         //ON SORT DE LA ZONE CRITIQUE
         sem_up0 (semID); 
-        
+
         msg.code = END_GAME;
         for (int i = 0; i < nbPlayers; ++i){
             swrite(pipes[i].pipefdWrite[1],&msg,sizeof(msg));
@@ -460,7 +479,7 @@ int main(int argc, char const *argv[]) {
             swait(&fils[i]);
         }        
     }    
-        freeAll(tabPlayers,pipes, shmId, semID,nbPlayers);
+        freeAll(tabPlayers,pipes, shmId, semID,tableJoueursIPC, nbPlayers);
 
     }
 
