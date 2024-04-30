@@ -3,8 +3,10 @@
  
 #include "player.h"
  
-#define MAX_PLAYERS 5
-#define TIME_INSCRIPTION 30
+//VARIABLES USED IN SERVER
+#define MAX_PLAYERS 3
+#define MIN_PLAYERS 2
+#define TIME_INSCRIPTION 15
 #define NUMBER_OF_PLAYS 20
 #define NUMBER_OF_TILES 40
 #define NUMBER_OF_USED_TILES 20
@@ -63,8 +65,12 @@ void sortByScoreDescending (Structplayer*players, int nbPlayers);
  * 
  */ 
 
- void freeAll(Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,Structplayer* tableJoueursIPC,int nbPlayers);
+ 
+ void freeAllMemory(int shmId, int sem_id,Structplayer* tableJoueursIPC);
 
+ void freeAllPipes(structPipe* pipes, int nbPlayers);
 
+ void freeAllSocket(Structplayer* tabPlayers, int nbPlayers);
 
+ void freeAllMalloc(Structplayer* tabPlayers, int* fils);
 #endif

@@ -131,28 +131,19 @@ int main(int argc, char const *argv[])
     }
  
    /*wait to know if the game START oR CANCEL*/
-    if(sread(sockfd,&message,sizeof(message))){
-        printf("message code 1 : %d\n ",message.code);
-        printf("message 2: %s \n ", message.messageText);
-    }else{
-        printf("mais je read rien en fait");
-    }
-    printf("Message recu du serveur fils : %s ; Le code reçcu du serveur fils: %d\n",message.messageText,message.code );
+    sread(sockfd,&message,sizeof(message));
+
 
     if (message.code == START_GAME){
         printf("START GAME\n");
 
-        // pseudoPlayer code : 
+         
         int* grille =  initGrille();
 
         for (int i = 1; i <=20; i++){ 
             sread(sockfd,&message,sizeof(message));
-
-            if(message.code==CANCEL_GAME){
-                printf("CANCEL_GAME\n");
-                sclose(sockfd);
-            } 
-            else if (message.code==NUMERO_TUILE){
+    
+            if (message.code==NUMERO_TUILE){
                 printf("------------\n ");
                 tileNumber = message.tuile;
                 printf("Veuillez choisir un emplacement :  pour la tuile %d \n", tileNumber);
@@ -186,8 +177,7 @@ int main(int argc, char const *argv[])
                 printf("\n");
                 printGrille(grille);
                 message.code = PLACEMENT_TERMINE;
-                ret = swrite(sockfd,&message,sizeof(message));
-                //printf("Voici vos placement : \n");
+                swrite(sockfd,&message,sizeof(message));
 
             }else{
                 printf("Réponse Serveur: non prevue %d.\n", message.code);
@@ -197,10 +187,15 @@ int main(int argc, char const *argv[])
 
 
         // on a fini le jeux 
+
+        // envoie de MON SCORE
+        message.code=MON_SCORE;
+        swrite(sockfd,&message,sizeof(message));
+        printf("message.code ; attentdu : MONSCORE : %d\n ", message.code);
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
-        
+        printf("scoreFinael : %d", score);
 
         // attend message ranking
         sread(sockfd,&message,sizeof(message));
@@ -230,7 +225,7 @@ int main(int argc, char const *argv[])
         }
             
  
-        //  end         
+        // end         
         sread(sockfd,&message,sizeof(message));
         if(message.code == END_GAME){
             printf("END GAME\n");
@@ -239,7 +234,7 @@ int main(int argc, char const *argv[])
             sclose(sockfd);
         } 
             
-    }else{
+    }else if(message.code == CANCEL_GAME){
         printf("Jeu annulé : il manque des joueurs\n");
         sclose(sockfd);
     }

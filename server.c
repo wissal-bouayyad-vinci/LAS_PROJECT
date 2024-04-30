@@ -26,24 +26,36 @@ volatile sig_atomic_t endGame;
 //***********************************METHODES**************************************//
 //*********************************************************************************//
 
- 
- void freeAll( Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,Structplayer* tableJoueursIPC,int nbPlayers){
-
-    for(int i=0 ; i<nbPlayers ; i++){
-        //FERMETURE DE TOUS LES PIPES CÔTE PÈRE
-        sclose(pipes[i].pipefdWrite[1]);
-        sclose(pipes[i].pipefdRead[0]);
-        //FERMETURE DE TOUS LES SOCKETS CLIENTS
-        sclose(tabPlayers[i].sockfd);
-    } 
+ void freeAllMemory(int shmId, int sem_id,Structplayer* tableJoueursIPC){
     //SUPPRESSION MEMOIRE PARTAGEE
     sshmdt(tableJoueursIPC);
     sshmdelete(shmId);
     sem_delete(sem_id);
-    //FREE DE LA MÉMOIRE ALLOUÉE
-    free(tabPlayers);
+ }
+
+
+ void freeAllPipes(structPipe* pipes, int nbPlayers){
+    for(int i=0 ; i<nbPlayers ; i++){
+        //FERMETURE DE TOUS LES PIPES CÔTE PÈRE
+        sclose(pipes[i].pipefdWrite[1]);
+        sclose(pipes[i].pipefdRead[0]);
+    } 
 
  }
+
+ void freeAllSocket(Structplayer* tabPlayers, int nbPlayers){
+    for(int i=0 ; i<nbPlayers ; i++){
+        //FERMETURE DE TOUS LES SOCKETS CLIENTS
+        sclose(tabPlayers[i].sockfd);
+    } 
+ }
+
+
+void freeAllMalloc(Structplayer* tabPlayers, int* fils)  {
+    free(tabPlayers) ;
+    free(fils) ;
+} 
+
 
 int* createTiles(){
     int* tilebag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
@@ -121,84 +133,102 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
     int *pipefdO = pipefdOut;
     int *pipefdI = pipefdIn;
     int *newsocket = socket;
+    
  
     //CLOTURE DU DESCRIPTEUR D'ECRITURE SUR LE PIPE
     sclose(pipefdI[1]);
     sclose(pipefdO[0]);
  
+    // ATTRIBUTS FILS
+    Structplayer* playersRankingSHM ;
+    Structplayer* playersRanking ;
+
+
     //ON ATTEND UN MESSAGE DE LA PART DU PERE : PARTIE ANNULEE OU START GAME 
     StructMessage msg;
     sread(pipefdI[0],&msg,sizeof(msg));
-    printf("Code du message recu du pere : %d\n ",msg.code);
-
-
-    //ENVOYER LE MESSAGE DU PERE AU CLIENT
-    swrite(*newsocket, &msg, sizeof(msg));
-    printf("Code du message recu du pere : %d\n ",msg.code);
-    if(msg.code == START_GAME){ 
+    if (msg.code==CANCEL_GAME){
+        printf("Code du message recu du pere : %d\n ",msg.code);
+        swrite(*newsocket, &msg, sizeof(msg));
+    }
+    else if (msg.code==START_GAME)
+    {
+        
+        swrite(*newsocket, &msg, sizeof(msg));
+        
         //RECEVOIR NUMERO TUILE PERE 20 FOIS
         for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
+
             sread(pipefdI[0],&msg,sizeof(msg));
-            printf("numero tuile : %d \n",msg.tuile);
-            swrite(*newsocket,&msg,sizeof(msg));
+            
+            if (msg.code==NUMERO_TUILE){
+                printf("numero tuile : %d \n",msg.tuile);
+                swrite(*newsocket,&msg,sizeof(msg));                
+            }
+
             sread(*newsocket,&msg,sizeof(msg));
-            if(msg.code!=PLACEMENT_TERMINE){
-                printf("message non attendu : %d \n",msg.code);
-            }    
-            swrite(pipefdO[1], &msg,sizeof(msg));
-            printf("%d placement terminer envoyer\n ", i);
+            if (msg.code==PLACEMENT_TERMINE){
+                swrite(pipefdO[1], &msg,sizeof(msg));
+                printf("%d placement terminer envoyer\n ", i);
+            }
+            
         } 
+        
     }
 
+    // RECEVOIR LE MESSAGE MON_SCORE
+    sread(*newsocket, &msg, sizeof(msg));
+    if (msg.code==MON_SCORE){
+        printf("fils : recevoir score client\n");
+        //RECEVOIR LE SCORE DU CLIENT
+        int score;
+        sread(*newsocket, &score, sizeof(int));
+        printf("Mon score chez le fils vaut : %d\n",score);
 
-    //RECEVOIR LE SCORE DU CLIENT
-    int score;
-    sread(*newsocket, &score, sizeof(int));
-    printf("Mon score chez le fils vaut : %d\n",score);
-    //ENVOYER LE SCORE AU PERE
-    swrite(pipefdO[1],&score, sizeof(int));
+        //ENVOYER LE SCORE AU PERE
+        swrite(pipefdO[1],&score, sizeof(int));
 
+    }
+    
     //ENVOYER MESSAGE RANKING
     sread(pipefdI[0],&msg,sizeof(msg));
-    swrite(*newsocket,&msg,sizeof(msg));
-    printf("envoie message ranking : %d\n ", msg.code);
+    if (msg.code==RANKING){
+        swrite(*newsocket,&msg,sizeof(msg));
+        printf("envoie message ranking : %d\n ", msg.code);
+        //Envoyer le nombre de joueurs
+        int nbrJoueurs;
+        sread(pipefdI[0],&nbrJoueurs,sizeof(int));
+        swrite(*newsocket,&nbrJoueurs,sizeof(int));
 
-    //Envoyer le nombre de joueurs
-    int nbrJoueurs;
-    sread(pipefdI[0],&nbrJoueurs,sizeof(int));
-    swrite(*newsocket,&nbrJoueurs,sizeof(int));
-    printf("nombre joueur chils_trt : %d\n", nbrJoueurs);
+        //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
+        int semID = getSemaphore();
+        sem_down0(semID);
+        playersRankingSHM = getsharedMemory(nbrJoueurs);
+        playersRanking = malloc (nbrJoueurs * sizeof(Structplayer));
 
+        if(!playersRanking){
+            perror("ALLOCATION ERROR");
+            exit(1);
+        }
+        
+        for(int i=0 ; i<nbrJoueurs ; i++){
+            strcpy(playersRanking[i].pseudo, playersRankingSHM[i].pseudo);
+            playersRanking[i].score = playersRankingSHM[i].score;
+            swrite(*newsocket,&playersRanking[i],sizeof(Structplayer)); 
+        } 
 
-    //ACCEDER A LA MEMOIRE PARTAGEE PROTEGEE PAR SEMAPHORE
-    int semID = getSemaphore();
-    sem_down0(semID);
-    Structplayer* playersRankingSHM = getsharedMemory(nbrJoueurs);
-    // sread(pipefdI[0],&playersRankingSHM,sizeof(Structplayer));
-    // printf("playersRankingSHM recu du père : %s\n", playersRankingSHM[0].pseudo);
-    Structplayer* playersRanking = malloc (nbrJoueurs * sizeof(Structplayer));
-
-    if(!playersRanking){
-        perror("ALLOCATION ERROR");
-        exit(1);
+        sem_up0(semID);
     }
-    for(int i=0 ; i<nbrJoueurs ; i++){
-        strcpy(playersRanking[i].pseudo, playersRankingSHM[i].pseudo);
-        playersRanking[i].score = playersRankingSHM[i].score;
-        printf("voici les joueur de ma table ranking %s\n",playersRanking[i].pseudo ); 
-        swrite(*newsocket,&playersRanking[i],sizeof(Structplayer)); 
-    } 
-
-    // swrite(*newsocket, &playersRanking, sizeof(Structplayer));
-    printf("child_trt : playersRanking\n");
-    sem_up0(semID);
+    
+    
 
     //ENVOYER ENDGAME AU CLIENT
     sread(pipefdI[0] ,&msg,sizeof(msg));
-    swrite(*newsocket,&msg,sizeof(msg));
+    if (msg.code == END_GAME){
+        swrite(*newsocket,&msg,sizeof(msg));
+    }
 
     //FERMER LA COMMUNICATION AVEC LE PERE
-    sshmdt(playersRankingSHM);
     free(playersRanking);
     sclose(pipefdI[0]);
     sclose(pipefdO[1]);
@@ -348,41 +378,48 @@ int main(int argc, char const *argv[]) {
         if (!endGame){
             ssigprocmask(SIG_BLOCK, &blocked, NULL);
 
-            //CREATION DE MEMOIRE PARTAGEE ET CREATION DE SEMAPHORE
+            // ATTRIBUTS DU PERE
             int shmId ;
             Structplayer* tableJoueursIPC;
-            int semID;
-            
-            structPipe* pipes = malloc (nbPlayers*sizeof(structPipe));
-            if(!pipes){
-                perror("Error in allocation");
-                exit(1);
-            }   
-            printf("FIN DES INSCRIPTIONS\n");
+            int semID; 
+            int* fils;           
+            structPipe* pipes;
 
-            int* fils= malloc (nbPlayers*sizeof(int));
-            if(!fils){
-                perror("Error in allocation");
-                exit(1);
-            }   
+            // CREATION PIPES POUR COMMUNICATION AVEC FILS
+            if (nbPlayers>0){
+                        
+                pipes = malloc (nbPlayers*sizeof(structPipe));
+                if(!pipes){
+                    perror("Error in allocation");
+                    exit(1);
+                }
 
-            for(int i=0 ; i<nbPlayers; i++){
-                int pipefdI[2];
-                int pipefdO[2];  
-                spipe(pipefdI);
-                spipe(pipefdO);
+                printf("FIN DES INSCRIPTIONS\n");
 
-                pipes[i].pipefdRead[0]  = pipefdI[0] ;
-                pipes[i].pipefdRead[1]  = pipefdI[1] ;
-                pipes[i].pipefdWrite[0]  = pipefdO[0] ;
-                pipes[i].pipefdWrite[1]  = pipefdO[1] ; 
-                int idFils = fork_and_run3(child_trt,pipes[i].pipefdRead, pipes[i].pipefdWrite , &tabPlayers[i].sockfd);
-                fils[i] = idFils;
-                //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
-                sclose(pipes[i].pipefdWrite[0]);
-                //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
-                sclose(pipes[i].pipefdRead[1]);    
-            }
+                fils= malloc (nbPlayers*sizeof(int));
+                if(!fils){
+                    perror("Error in allocation");
+                    exit(1);
+                }   
+
+                for(int i=0 ; i<nbPlayers; i++){
+                    int pipefdI[2];
+                    int pipefdO[2];  
+                    spipe(pipefdI);
+                    spipe(pipefdO);
+
+                    pipes[i].pipefdRead[0]  = pipefdI[0] ;
+                    pipes[i].pipefdRead[1]  = pipefdI[1] ;
+                    pipes[i].pipefdWrite[0]  = pipefdO[0] ;
+                    pipes[i].pipefdWrite[1]  = pipefdO[1] ; 
+                    int idFils = fork_and_run3(child_trt,pipes[i].pipefdRead, pipes[i].pipefdWrite , &tabPlayers[i].sockfd);
+                    fils[i] = idFils;
+                    //CLOTURE DU DESCRIPTEUR POUR LA LECTURE SUR LE PIPE D'ECRITURE
+                    sclose(pipes[i].pipefdWrite[0]);
+                    //CLOTURE DU DESCRIPTEUR POUR L'ECRITURE SUR LE PIPE DE LECTURE
+                    sclose(pipes[i].pipefdRead[1]);    
+                }
+    }
 
         //*********************************************************************************//
         //*******************************ANNULER PARTIE************************************//
@@ -395,21 +432,34 @@ int main(int argc, char const *argv[]) {
             strcpy(msg.messageText, message);
             //ON ECRIT UN MESSAGE POUR TOUS LES SERVEURS FILS
             for(int i=0 ; i<nbPlayers ; i++){
-                swrite(pipes[0].pipefdWrite[1] , &msg, sizeof(StructMessage));
+                swrite(pipes[i].pipefdWrite[1] , &msg, sizeof(StructMessage));
             } 
+
+            freeAllPipes(pipes,nbPlayers);
         
-        } else if(nbPlayers==0){
-            printf("Auncun joueurs ne s'est inscrit.\n");
-        } else {
+        } 
+
+        //*********************************************************************************//
+        //*******************************AUCUNE INSCRIPTION FAITE************************************//
+        //*********************************************************************************//
+     
+        else if(nbPlayers==0){
+            printf("Aucun joueur ne s'est inscrit.\n");
+        }
+
+        //*********************************************************************************//
+        //*******************************COMMENCER PARTIE************************************//
+        //*********************************************************************************//
+            
+        else if (nbPlayers>=MIN_PLAYERS)
+        {
 
             //CREATION DE MEMOIRE PARTAGEE ET CREATION DE SEMAPHORE
             shmId = initSharedMemory(nbPlayers);
             tableJoueursIPC = attacheSHM(shmId);
             semID = initSemaphore();
      
-            //*********************************************************************************//
-            //*******************************COMMENCER PARTIE************************************//
-            //*********************************************************************************//
+            // START GAME
             printf ("La jeu va commencer\n");
             msg.code = START_GAME;
             char* message = "Partie va commencer\n";
@@ -420,7 +470,7 @@ int main(int argc, char const *argv[]) {
                 swrite(pipes[i].pipefdWrite[1],&msg,sizeof(StructMessage));
             } 
 
-            if(fdTuiles == NULL ){
+            if(argc<3 ){
                 tilesbag = createTiles();
             }else{
                 tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
@@ -465,12 +515,12 @@ int main(int argc, char const *argv[]) {
             printf("Les 20 tours sont terminés!\n ");
             
 
-
-            
-
             //ON ENTRE DANS LA ZONE CRITIQUE
             int scorePersonnel;
             sem_down0(semID);
+
+
+
             // JE RECUPERE TOUS LES SCORES DES JOUEURS ET JE LE METS DANS LA TABLE
             for(int i=0 ;i<nbPlayers;i++){
                 sread(pipes[i].pipefdRead[0],&scorePersonnel,sizeof(int));
@@ -508,7 +558,13 @@ int main(int argc, char const *argv[]) {
                 swait(&fils[i]);
             }        
         
-            freeAll(tabPlayers,pipes, shmId, semID,tableJoueursIPC, nbPlayers);
+
+            freeAllMemory(shmId,semID,tableJoueursIPC);
+            freeAllPipes(pipes,nbPlayers);
+            freeAllSocket(tabPlayers,nbPlayers);
+            freeAllMalloc(tabPlayers,fils);
+
+
         }    
 
 

@@ -1,9 +1,7 @@
 #ifndef NETWORK_SERVER_H
 #define NETWORK_SERVER_H
  
-//VARIABLES USED IN SERVER
-#define MAX_PLAYERS 5
-#define MIN_PLAYERS 2
+
  
 /**
 * PRE:  port: the given port 

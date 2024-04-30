@@ -12,6 +12,7 @@
 #define PLACEMENT_TERMINE 16
 #define RANKING 17
 #define END_GAME 18
+#define MON_SCORE 19
 
 /* struct message used between server and client */
 typedef struct
