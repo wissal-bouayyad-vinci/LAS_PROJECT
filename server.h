@@ -61,9 +61,7 @@ void addPlayerToTable (Structplayer* tableauDesJoueurs,Structplayer newPlayer, i
 */
 void sortByScoreDescending (Structplayer*players, int nbPlayers);
 
-/**
- * 
- */ 
+ 
 
  
  void freeAllMemory(int shmId, int sem_id,Structplayer* tableJoueursIPC);
@@ -72,5 +70,10 @@ void sortByScoreDescending (Structplayer*players, int nbPlayers);
 
  void freeAllSocket(Structplayer* tabPlayers, int nbPlayers);
 
- void freeAllMalloc(Structplayer* tabPlayers, int* fils);
+ void freeAllMalloc(Structplayer* tabPlayers, int* fils,int* tilesbag);
+
+ size_t getTableSize(char **table);
+
+
+
 #endif

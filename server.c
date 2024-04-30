@@ -16,14 +16,13 @@
 #include "network_serveur.h"
 #include "server.h"
 #include "player.h"
+
+
 /**
 *BOUAYYAD WISSAL
 *BARROS SOUSA ERICA
 *GROUPE n° 28
 */
-
-
-
 
 //GLOBALS VARIABLES
 volatile sig_atomic_t end;
@@ -59,11 +58,28 @@ volatile sig_atomic_t endGame;
  }
 
 
-void freeAllMalloc(Structplayer* tabPlayers, int* fils)  {
+void freeAllMalloc(Structplayer* tabPlayers, int* fils,int* tilesbag)  {
     free(tabPlayers) ;
     free(fils) ;
+    free(tilesbag);
 } 
 
+
+size_t getTableSize(char **table){
+
+    size_t size =0;
+
+    if (table)
+    {
+        while(table[size]!=NULL){
+            size++;
+            
+        }
+    }
+
+    return size;
+
+}
 
 int* createTiles(){
     int* tilebag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
@@ -168,7 +184,7 @@ void child_trt(void *pipefdOut, void *pipefdIn, void *socket) {
         for(int i=0 ; i< NUMBER_OF_USED_TILES; i++){
 
             sread(pipefdI[0],&msg,sizeof(msg));
-            
+
             if (msg.code==NUMERO_TUILE){
                 printf("numero tuile : %d \n",msg.tuile);
                 swrite(*newsocket,&msg,sizeof(msg));                
@@ -291,32 +307,24 @@ int main(int argc, char const *argv[]) {
 
 
     //Recuperer le fichier tuiles
-    int* tilesTemp;
-    int cpt=0;
-    FILE *fdTuiles;
+    int tilesBagLength=0;
+    int fdTuiles;
+    int indexTuilesFD=0;
+    char** tableTuilesFD;
+
     if(argc == 3){
-        fdTuiles = fopen(argv[2],"r");
-        int nbr;
-        while(fscanf(fdTuiles, "%d", &nbr)==1){
-            cpt++;
-        }
 
-        tilesTemp =malloc(cpt*sizeof(int));
-        if (tilesTemp==NULL){
-            perror("tilesTemp error allocation");
-            exit(1);
-        }
+        fdTuiles = sopen(argv[2], O_RDONLY, 0444);
+        tableTuilesFD = readFileToTable(fdTuiles);
 
-        cpt=0;
-        while(fscanf(fdTuiles, "%d", &tilesTemp[cpt])==1){
-            cpt++;
-        }
+
+        tilesBagLength = getTableSize(tableTuilesFD);
+        
     }
-
-    int nextTileTemp=0; 
-    int* tilesbag;
-
+        
     
+
+    int* tilesbag;
 
     // SI ON RRETE LE JEUX APRES UNE PARTIE (CONTROL-C) 
     while(!endGame){
@@ -479,20 +487,30 @@ int main(int argc, char const *argv[]) {
             } 
 
             if(argc<3 ){
+                printf("argc < 3\n ");
                 tilesbag = createTiles();
-            }else{
-                tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
-                if (tilesbag ==NULL)
-                {
-                    perror("tilesbag error allocation");
+            }
+            else if(indexTuilesFD>=tilesBagLength)
+            {
+                printf("indexTuilesFD>=tilesBagLength\n ");
+                tilesbag = createTiles();
+            } 
+            else
+            {
+                printf("argc==3\n ");
+                tilesbag  = (int*) malloc(NUMBER_OF_USED_TILES*sizeof(int));
+
+                if(tilesbag==NULL){
+                    perror("error allocation tilesbag");
                     exit(1);
-                }
-
-                for (int i = 0; i < NUMBER_OF_TILES; ++i){
-                    tilesbag[i] = tilesTemp[nextTileTemp];
-                    nextTileTemp++;
-                }
-
+                } 
+                printf("indextuilefd PARTIE AVANT  %d\n ", indexTuilesFD);
+                for(int i=0;i<NUMBER_OF_USED_TILES;i++) {  
+                    printf("indextuilesFD %d\n ",indexTuilesFD);  
+                    tilesbag[i] = atoi(tableTuilesFD[indexTuilesFD]);
+                    indexTuilesFD++; 
+                } 
+                
             } 
             
             int cptPlacedTiles = 0;
@@ -570,7 +588,7 @@ int main(int argc, char const *argv[]) {
             freeAllMemory(shmId,semID,tableJoueursIPC);
             freeAllPipes(pipes,nbPlayers);
             freeAllSocket(tabPlayers,nbPlayers);
-            freeAllMalloc(tabPlayers,fils);
+            freeAllMalloc(tabPlayers,fils,tilesbag);
 
 
         }    
@@ -582,7 +600,7 @@ int main(int argc, char const *argv[]) {
             ssigprocmask(SIG_UNBLOCK,&blocked,NULL);
         }
 
-    free(tilesbag);
+    
     exit(0);
 
 } 
