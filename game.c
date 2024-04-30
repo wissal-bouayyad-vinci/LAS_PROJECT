@@ -98,7 +98,7 @@ int scoreCalculation(int* grille){
                 
                     }else{
                         points += TablePoints[before];
-                        sequence_length=1;
+                        sequence_length=2;
 
                     }
 

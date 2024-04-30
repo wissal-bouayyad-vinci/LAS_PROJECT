@@ -94,13 +94,13 @@ int main(int argc, char const *argv[])
     int* placesChosen;
     if(argc == 3){
 
-        
+        printf("je te lavais dis \n");
         fdPlacements = sopen(argv[2], O_RDONLY, 0444);
         tablePlacements = readFileToTable(fdPlacements);
         
         strcpy(pseudoPlayer ,tablePlacements[0]);
-        printf("PSEUDO :  %s\n ",pseudoPlayer);
-        printf("PSEUDO %s \n", tablePlacements[0]);
+        printf("1. PSEUDO :  %s\n ",pseudoPlayer);
+        printf("2. PSEUDO %s \n", tablePlacements[0]);
 
         placesChosen  = (int*) malloc(MAX_NUMBER_TURN*sizeof(int));
         if(placesChosen==NULL){
@@ -108,7 +108,7 @@ int main(int argc, char const *argv[])
             exit(1);
         } 
         
-        for(int i=1;i<MAX_NUMBER_TURN;i++) {  
+        for(int i=1;i<=MAX_NUMBER_TURN;i++) {  
            placesChosen[i] = atoi(tablePlacements[i]); 
         } 
 
@@ -120,15 +120,18 @@ int main(int argc, char const *argv[])
     // recup
 
     printf("Bienvenu(e)!. Inscrivez-vous pour commencer le jeu.\n");
-    if (placesChosen ==NULL ){
-        printf("Nom: \n");
-        ret = sread(0,pseudoPlayer,MAX_PSEUDO);
-        pseudoPlayer[ret - 1] = '\0';
-    }
+    
+    printf("Nom: \n");
+    // ret = sread(0,pseudoPlayer,MAX_PSEUDO);
+    ret = readLimitedLine (pseudoPlayer, MAX_PSEUDO);
+    pseudoPlayer[ret] = '\0';
+    
 
     strcpy(message.messageText,pseudoPlayer);
     message.code = INSCRIPTION_REQUEST;
- 
+    
+    printf(" %s \n",message.messageText);
+
     // start socket
     sockfd = initSocketClient(SERVER_IP,SERVER_PORT);
     swrite(sockfd,&message,sizeof(message));
@@ -175,13 +178,14 @@ int main(int argc, char const *argv[])
 
                 if (argc==3)
                 {
-
+                    printf("PLACEMENT FICHIER \n");
                     chosenPlacement = placesChosen[prochainPlacement];
                     printf("chosenPlacement : %d\n", chosenPlacement);
                     prochainPlacement++;
                     choosePlacement(tileNumber,chosenPlacement,grille);
                 }else{
 
+                    printf("PLACEMENT AU CLAVIER \n");
                     char input[256];
                     fgets(input, sizeof(input), stdin);
                     sscanf(input, "%d", &chosenPlacement);
@@ -212,11 +216,11 @@ int main(int argc, char const *argv[])
         // envoie de MON SCORE
         message.code=MON_SCORE;
         swrite(sockfd,&message,sizeof(message));
-        printf("message.code ; attentdu : MONSCORE : %d\n ", message.code);
+        // printf("message.code ; attentdu : MONSCORE : %d\n ", message.code);
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
-        printf("scoreFinael : %d", score);
+        // printf("scoreFinael : %d", score);
 
         // attend message ranking
         sread(sockfd,&message,sizeof(message));
