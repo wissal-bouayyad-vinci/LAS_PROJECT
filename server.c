@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <fcntl.h>
 #include <ctype.h> 
+
 #include "message.h"
 #include "utils_v1.h"
 #include "ipc.h"
@@ -316,8 +317,6 @@ int main(int argc, char const *argv[]) {
 
         fdTuiles = sopen(argv[2], O_RDONLY, 0444);
         tableTuilesFD = readFileToTable(fdTuiles);
-
-
         tilesBagLength = getTableSize(tableTuilesFD);
         
     }

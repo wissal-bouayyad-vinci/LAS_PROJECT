@@ -18,6 +18,12 @@ void printGrille(int* grille);
  */ 
 void printRanking( Structplayer* players,int size);
 
+ 
+/**
+ * PRE: table is a table of  strings 
+ * RES:the number of lines from the table
+ */
+ size_t getTableSize(char **table);
 
 #endif
 

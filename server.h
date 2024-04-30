@@ -72,6 +72,10 @@ void sortByScoreDescending (Structplayer*players, int nbPlayers);
 
  void freeAllMalloc(Structplayer* tabPlayers, int* fils,int* tilesbag);
 
+/**
+ * PRE: table is a table of  strings 
+ * RES:the number of lines from the table
+ */
  size_t getTableSize(char **table);
 
 

@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <stdlib.h>
+
 #include "player.h"
 #include "game.h"
 #include "network_client.h"
@@ -16,6 +17,24 @@
 #include "config.h"
 #include "client.h"
  
+
+size_t getTableSize(char **table){
+
+    size_t size =0;
+
+    if (table)
+    {
+        while(table[size]!=NULL){
+            size++;
+            
+        }
+    }
+
+    return size;
+
+}
+
+
 void printGrille(int* grille){
     printf("GRILLE DE JEUX\n");
     printf("%2s ", "");
@@ -68,30 +87,31 @@ int main(int argc, char const *argv[])
     StructMessage message;
 
 
-    FILE *fdPlacements;
+   
     //RECUPERER LE FICHIER PLACEMENTS
-    int * placements;
+    int fdPlacements;
+    char** tablePlacements;
+    int* placesChosen;
     if(argc == 3){
 
-        fdPlacements = fopen(argv[2],"r");    
-        if (fdPlacements==NULL){
-            perror("le dossier donner dans les arguments est invalid");
-            exit(1);   
-        }else{
-            placements= malloc (MAX_NUMBER_TURN * sizeof(int));
-            if(!placements){
-                    perror("ALLOCATION ERROR");
-                    exit(1);
-            }
+        
+        fdPlacements = sopen(argv[2], O_RDONLY, 0444);
+        tablePlacements = readFileToTable(fdPlacements);
+        
+        strcpy(pseudoPlayer ,tablePlacements[0]);
+        printf("PSEUDO :  %s\n ",pseudoPlayer);
+        printf("PSEUDO %s \n", tablePlacements[0]);
 
-            int cptPlaces = 0;
+        placesChosen  = (int*) malloc(MAX_NUMBER_TURN*sizeof(int));
+        if(placesChosen==NULL){
+            perror("error allocation placesChosen");
+            exit(1);
+        } 
+        
+        for(int i=1;i<MAX_NUMBER_TURN;i++) {  
+           placesChosen[i] = atoi(tablePlacements[i]); 
+        } 
 
-            fscanf(fdPlacements, "%s", pseudoPlayer);    
-
-            while(fscanf(fdPlacements, "%d", &placements[cptPlaces])==1){
-                cptPlaces++;
-            } 
-        }
     } 
 
 
@@ -100,7 +120,7 @@ int main(int argc, char const *argv[])
     // recup
 
     printf("Bienvenu(e)!. Inscrivez-vous pour commencer le jeu.\n");
-    if (argc != 3 ){
+    if (placesChosen ==NULL ){
         printf("Nom: \n");
         ret = sread(0,pseudoPlayer,MAX_PSEUDO);
         pseudoPlayer[ret - 1] = '\0';
@@ -140,7 +160,7 @@ int main(int argc, char const *argv[])
          
         int* grille =  initGrille();
 
-        for (int i = 1; i <=20; i++){ 
+        for (int i = 1; i <=MAX_NUMBER_TURN; i++){ 
             sread(sockfd,&message,sizeof(message));
     
             if (message.code==NUMERO_TUILE){
@@ -155,7 +175,8 @@ int main(int argc, char const *argv[])
 
                 if (argc==3)
                 {
-                    chosenPlacement = placements[prochainPlacement];
+
+                    chosenPlacement = placesChosen[prochainPlacement];
                     printf("chosenPlacement : %d\n", chosenPlacement);
                     prochainPlacement++;
                     choosePlacement(tileNumber,chosenPlacement,grille);
