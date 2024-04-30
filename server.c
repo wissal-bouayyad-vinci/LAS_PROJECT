@@ -224,7 +224,7 @@ int main(int argc, char const *argv[]) {
     int sockfd = initSocketServer(port);
     printf("Le serveur tourne dans le port %d\n",port);
     //Recuperer le fichier tuiles
-    File *fdTuiles;
+    FILE *fdTuiles;
     if(argc == 3){
         fdTuiles = fopen(argv[2],"r");   
     }
@@ -358,6 +358,7 @@ int main(int argc, char const *argv[]) {
         if(fdTuiles == NULL){
             tilesbag = createTiles();
         }else{
+            tilesbag = (int*) malloc(NUMBER_OF_TILES*sizeof(int));
             int cptTuiles = 0;
             while(fscanf(fdTuiles, "%d", &tilesbag[cptTuiles])==1){
                 cptTuiles++;
