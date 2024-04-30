@@ -56,12 +56,10 @@ int main(int argc, char const *argv[])
     }
     int SERVER_PORT = atoi(argv[1]);
 
-    //RECUPERER LE FICHIER PLACEMENTS
-    /* if(argc == 3){
-      int fdPlacements = sopen(argv[2], O_WRONLY | O_TRUNC | O_CREAT, 0644);    
-    } */
+    
 
     // attributs : 
+    int prochainPlacement=0;
     Structplayer* players;
     char pseudoPlayer[MAX_PSEUDO];
     int sockfd;
@@ -69,12 +67,45 @@ int main(int argc, char const *argv[])
     int tileNumber;
     StructMessage message;
 
-    // recup 
-    printf("Bienvenu(e)!. Inscrivez-vous pour commencer le jeu.\n");
-    printf("Nom: \n");
-    ret = sread(0,pseudoPlayer,MAX_PSEUDO);
 
-    pseudoPlayer[ret - 1] = '\0';
+    FILE *fdPlacements;
+    //RECUPERER LE FICHIER PLACEMENTS
+    int * placements;
+    if(argc == 3){
+
+        fdPlacements = fopen(argv[2],"r");    
+        if (fdPlacements==NULL){
+            perror("le dossier donner dans les arguments est invalid");
+            exit(1);   
+        }else{
+            placements= malloc (MAX_NUMBER_TURN * sizeof(int));
+            if(!placements){
+                    perror("ALLOCATION ERROR");
+                    exit(1);
+            }
+
+            int cptPlaces = 0;
+
+            fscanf(fdPlacements, "%s", pseudoPlayer);    
+
+            while(fscanf(fdPlacements, "%d", &placements[cptPlaces])==1){
+                cptPlaces++;
+            } 
+        }
+    } 
+
+
+
+
+    // recup
+
+    printf("Bienvenu(e)!. Inscrivez-vous pour commencer le jeu.\n");
+    if (argc != 3 ){
+        printf("Nom: \n");
+        ret = sread(0,pseudoPlayer,MAX_PSEUDO);
+        pseudoPlayer[ret - 1] = '\0';
+    }
+
     strcpy(message.messageText,pseudoPlayer);
     message.code = INSCRIPTION_REQUEST;
  
@@ -128,24 +159,31 @@ int main(int argc, char const *argv[])
                 // printf("tileNumber : %d\n", tileNumber);
                 printGrille(grille);
 
-                int chosenPlacement;
-                // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
-                char input[256];
-                fgets(input, sizeof(input), stdin);
-                sscanf(input, "%d", &chosenPlacement);
 
-                // printf("lilil : %d \n",chosenPlacement);
-                while(!choosePlacement(tileNumber, chosenPlacement, grille)){    
-                    // read(STDIN_FILENO, &chosenPlacement, sizeof(int));
+                int chosenPlacement;
+
+                if (argc==3)
+                {
+                    chosenPlacement = placements[prochainPlacement];
+                    printf("chosenPlacement : %d\n", chosenPlacement);
+                    prochainPlacement++;
+                    choosePlacement(tileNumber,chosenPlacement,grille);
+                }else{
+
                     char input[256];
                     fgets(input, sizeof(input), stdin);
                     sscanf(input, "%d", &chosenPlacement);
-                    // printf("chosenPlacement : %d\n", chosenPlacement);
-                    printf("AAAA\n");
+
+                    while(!choosePlacement(tileNumber, chosenPlacement, grille)){    
+                        char input[256];
+                        fgets(input, sizeof(input), stdin);
+                        sscanf(input, "%d", &chosenPlacement);
+                    }
                 }
 
                 // if true
-                printf("AVANT PLACEMENT TERMINER\n "); 
+                printf("\n");
+                printf("\n");
                 printGrille(grille);
                 message.code = PLACEMENT_TERMINE;
                 ret = swrite(sockfd,&message,sizeof(message));
@@ -162,7 +200,7 @@ int main(int argc, char const *argv[])
         int scoreFinal = scoreCalculation(grille);
         int score=scoreFinal;
         swrite(sockfd,&score,sizeof(int));
-        printf("FIN DU JEUX VOICI VOS POINTS, %d\n",scoreFinal);
+        
 
         // attend message ranking
         sread(sockfd,&message,sizeof(message));
@@ -170,7 +208,7 @@ int main(int argc, char const *argv[])
         if ((message.code==RANKING)){
             int size;   
             sread(sockfd,&size,sizeof(size));
-            printf("VOICI LE NOMBRE DE JOUEUR : %d\n", size);
+            
             players =  malloc (size * sizeof(Structplayer));
             if(!players){
                 perror("ALLOCATION ERROR");
@@ -183,9 +221,8 @@ int main(int argc, char const *argv[])
                 sread(sockfd,&newplayer,sizeof(Structplayer));
                 strcpy(players[i].pseudo,newplayer.pseudo);
                 players[i].score = newplayer.score;
-                printf("PLAYER pseudo %s\n", players[i].pseudo);
+                
             }
-            printf("ON SE TREVE APRES LECTURE JOUEUR %s\n", players[1].pseudo);
             printRanking(players,size);
 
         }else{
@@ -199,10 +236,12 @@ int main(int argc, char const *argv[])
             printf("END GAME\n");
             free(grille);
             free(players);
+            sclose(sockfd);
         } 
             
     }else{
         printf("Jeu annulé : il manque des joueurs\n");
+        sclose(sockfd);
     }
  
     return 0;

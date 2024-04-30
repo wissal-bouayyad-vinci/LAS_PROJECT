@@ -63,7 +63,7 @@ void sortByScoreDescending (Structplayer*players, int nbPlayers);
  * 
  */ 
 
- void freeAll(int* tilebag, Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,int nbPlayers);
+ void freeAll(Structplayer* tabPlayers, structPipe* pipes, int shmId, int sem_id,Structplayer* tableJoueursIPC,int nbPlayers);
 
 
 
