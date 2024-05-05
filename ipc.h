@@ -15,12 +15,14 @@
 int initSharedMemory(int nbrPlayers);
 
 /**
- * 
+ * PRE:  shmID : the id of the shared memory
+ * POST: on success, you get the shared memory pointer.
+ * RES:  return a pointer to the shared memory.
  */ 
 Structplayer* attacheSHM(int shmID);
 
 /**
- * PRE:   
+ * PRE:  nbrPlayers : number of Players.
  * POST: on success, you get the shared memory pointer.
  * RES:  return a pointer to the shared memory.
  */
